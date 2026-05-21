@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>indy — Tu Billetera con Interés Diario</title>
+    <meta name="description" content="indy es una billetera virtual premium que hace rendir tu dinero todos los días con interés compuesto e inversiones estratégicas.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+    <div class="stars-bg"></div>
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <span class="logo-text">indy</span>
+            </div>
+            <div class="status-indicator">
+                <span class="pulse-dot"></span>
+                <span class="status-label">Mercado Abierto</span>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <main class="dashboard-grid">
+            
+            <!-- Hero Balance Card -->
+            <section class="card glass-card hero-card" id="balance-section">
+                <div class="card-header">
+                    <span class="card-subtitle"><i class="fa-solid fa-vault"></i> Saldo Disponible</span>
+                    <span class="currency-badge">ARS / $</span>
+                </div>
+                <div class="balance-display">
+                    <span class="balance-sign">$</span>
+                    <span id="main-balance" class="balance-amount">0.00</span>
+                </div>
+                
+                <!-- Live Ticker for today's earnings -->
+                <div class="live-earnings-container">
+                    <span class="earnings-label">Ganado hoy (acumulándose en vivo)</span>
+                    <div class="earnings-value-row">
+                        <span class="trend-icon"><i class="fa-solid fa-arrow-trend-up"></i></span>
+                        <span class="earnings-currency">$</span>
+                        <span id="live-today-earnings" class="earnings-amount">0.000000</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="btn-deposit-trigger">
+                        <i class="fa-solid fa-circle-plus"></i> Ingresar Dinero
+                    </button>
+                    <button class="btn btn-secondary" id="btn-withdraw-trigger">
+                        <i class="fa-solid fa-circle-minus"></i> Retirar
+                    </button>
+                </div>
+            </section>
+
+            <!-- Investment Strategy Card -->
+            <section class="card glass-card strategy-card" id="strategy-section">
+                <h2 class="card-title"><i class="fa-solid fa-chart-line"></i> Estrategia de Inversión</h2>
+                <p class="card-description">Elige dónde colocar tus fondos para definir tu tasa de interés diario.</p>
+                
+                <div class="strategy-selector">
+                    <button class="strat-tab active" data-strategy="conservative" id="strat-conservative">
+                        <span class="strat-title">Conservador</span>
+                        <span class="strat-apy">70% TNA</span>
+                    </button>
+                    <button class="strat-tab" data-strategy="moderate" id="strat-moderate">
+                        <span class="strat-title">Moderado</span>
+                        <span class="strat-apy">95% TNA</span>
+                    </button>
+                    <button class="strat-tab" data-strategy="aggressive" id="strat-aggressive">
+                        <span class="strat-title">Agresivo</span>
+                        <span class="strat-apy">140% TNA</span>
+                    </button>
+                </div>
+
+                <div class="strategy-details-box" id="strategy-details">
+                    <div class="badge-row">
+                        <span id="risk-badge" class="badge badge-low">Riesgo Bajo</span>
+                        <span id="yield-badge" class="badge badge-yield">Tasa Diaria: ~0.19%</span>
+                    </div>
+                    <p id="strategy-description" class="strategy-text">Fondo remunerado de alta liquidez. Ideal para tener disponibilidad de tu saldo las 24 hs sin fluctuaciones de capital.</p>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Rendimiento Anual (TNA)</span>
+                            <span class="metric-value" id="metric-tna">70.0%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Ganancia Diaria Est. (por c/$10k)</span>
+                            <span class="metric-value" id="metric-daily-est">$19.18</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Time Machine / Simulator Card -->
+            <section class="card glass-card time-machine-card" id="simulator-section">
+                <h2 class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Simulador de Tiempo y Rendimiento</h2>
+                <p class="card-description">Acelera el paso del tiempo para ver el poder del interés compuesto diario.</p>
+
+                <!-- Interactive Time Slider -->
+                <div class="slider-group">
+                    <div class="slider-labels">
+                        <span>Horizonte de Simulación</span>
+                        <span class="highlight-text" id="simulation-days-label">90 días</span>
+                    </div>
+                    <input type="range" min="10" max="365" value="90" class="premium-slider" id="simulator-days-range">
+                    <div class="slider-ticks">
+                        <span>10d</span>
+                        <span>90d</span>
+                        <span>180d</span>
+                        <span>270d</span>
+                        <span>365d</span>
+                    </div>
+                </div>
+
+                <div class="quick-simulation-actions">
+                    <button class="btn btn-outline" id="btn-add-day">
+                        <i class="fa-solid fa-calendar-plus"></i> Simular +1 Día
+                    </button>
+                    <button class="btn btn-glow" id="btn-auto-simulate">
+                        <i class="fa-solid fa-play"></i> Simulación Rápida (Auto)
+                    </button>
+                </div>
+
+                <div class="projection-summary">
+                    <div class="projection-column">
+                        <span class="proj-label">Saldo Proyectado</span>
+                        <span class="proj-val" id="projected-balance">$0.00</span>
+                    </div>
+                    <div class="projection-divider"></div>
+                    <div class="projection-column">
+                        <span class="proj-label">Intereses Ganados</span>
+                        <span class="proj-val highlight-green" id="projected-earnings">+$0.00</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Chart Card -->
+            <section class="card glass-card chart-card" id="chart-section">
+                <div class="chart-header-row">
+                    <h2 class="card-title"><i class="fa-solid fa-chart-area"></i> Proyección de Crecimiento</h2>
+                    <span class="chart-legend"><span class="legend-dot"></span> Saldo Proyectado</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Transactions / Ledger Card -->
+            <section class="card glass-card ledger-card" id="ledger-section">
+                <h2 class="card-title"><i class="fa-solid fa-list-ul"></i> Actividad de Cuenta (Real)</h2>
+                <div class="ledger-container">
+                    <div class="ledger-list" id="ledger-list">
+                        <!-- Dynamically populated by TS -->
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>indy Fintech S.A. — Conectado a la API del Servidor Java Backend para inversiones en tiempo real.</p>
+            <p class="copyright">&copy; 2026 indy. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <!-- Deposit Modal -->
+    <div class="modal-overlay" id="modal-deposit">
+        <div class="modal-content glass-card">
+            <button class="modal-close" id="btn-deposit-close"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="modal-title"><i class="fa-solid fa-circle-plus"></i> Ingresar Dinero</h3>
+            <p class="modal-text">Simula un depósito en tu cuenta para ver cómo incrementa tu base de interés diario.</p>
+            <div class="input-group">
+                <label for="deposit-amount">Monto a ingresar (ARS)</label>
+                <div class="money-input-wrapper">
+                    <span class="input-currency">$</span>
+                    <input type="number" id="deposit-amount" placeholder="0.00" min="100" max="10000000" value="50000">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="btn-deposit-confirm">Confirmar Depósito</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div class="modal-overlay" id="modal-withdraw">
+        <div class="modal-content glass-card">
+            <button class="modal-close" id="btn-withdraw-close"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="modal-title"><i class="fa-solid fa-circle-minus"></i> Retirar Dinero</h3>
+            <p class="modal-text">Simula una extracción de fondos de tu saldo remunerado.</p>
+            <div class="input-group">
+                <label for="withdraw-amount">Monto a retirar (ARS)</label>
+                <div class="money-input-wrapper">
+                    <span class="input-currency">$</span>
+                    <input type="number" id="withdraw-amount" placeholder="0.00" min="100" max="10000000">
+                </div>
+                <div class="max-balance-hint">Saldo disponible: <span id="withdraw-max-hint">$0.00</span></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" id="btn-withdraw-confirm">Confirmar Extracción</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
