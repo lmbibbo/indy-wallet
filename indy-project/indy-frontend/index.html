@@ -19,6 +19,28 @@
     <div class="glow-orb glow-orb-2"></div>
 
     <div class="app-container">
+        <!-- Auth Overlay -->
+        <div class="auth-overlay active" id="auth-overlay">
+            <div class="auth-card glass-card">
+                <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+                <h2 class="auth-title">Bienvenido a indy</h2>
+                <p class="auth-desc">Inicia sesión o regístrate para continuar.</p>
+                
+                <form id="auth-form" class="auth-form">
+                    <div class="input-group">
+                        <label for="auth-email">Correo Electrónico</label>
+                        <input type="email" id="auth-email" required placeholder="tu@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="auth-password">Contraseña</label>
+                        <input type="password" id="auth-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btn-auth-submit">Iniciar Sesión</button>
+                    <button type="button" class="btn btn-outline" id="btn-auth-toggle">¿No tienes cuenta? Regístrate</button>
+                </form>
+            </div>
+        </div>
+
         <!-- Header -->
         <header class="app-header">
             <div class="logo-area">
@@ -30,6 +52,7 @@
             <div class="status-indicator">
                 <span class="pulse-dot"></span>
                 <span class="status-label">Mercado Abierto</span>
+                <button class="btn-logout" id="btn-logout" title="Cerrar Sesión"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
         </header>
 
@@ -131,7 +154,7 @@
                     <button class="btn btn-outline" id="btn-add-day">
                         <i class="fa-solid fa-calendar-plus"></i> Simular +1 Día
                     </button>
-                    <button class="btn btn-glow" id="btn-auto-simulate">
+                    <button class="btn btn-glow admin-only hidden" id="btn-auto-simulate">
                         <i class="fa-solid fa-play"></i> Simulación Rápida (Auto)
                     </button>
                 </div>

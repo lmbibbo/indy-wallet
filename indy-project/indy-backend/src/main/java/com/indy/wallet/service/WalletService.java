@@ -8,31 +8,38 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class WalletService {
     
-    private final WalletState state;
-    private final List<Transaction> transactions;
+    private final Map<String, WalletState> userStates;
+    private final Map<String, List<Transaction>> userTransactions;
     private final DateTimeFormatter dateFormatter;
 
     public WalletService() {
         this.dateFormatter = DateTimeFormatter.ofPattern("dd 'de' MMM, yyyy", Locale.forLanguageTag("es-AR"));
-        
-        // Estado inicial
-        this.state = new WalletState(150000.00, 0.00, "conservative", 0.000000, 0);
-        this.transactions = new CopyOnWriteArrayList<>();
-        
-        // Transacción inicial
-        this.transactions.add(new Transaction(
-            1L,
-            "deposit",
-            "Depósito Inicial",
-            150000.00,
-            getFormattedDate(0),
-            false
-        ));
+        this.userStates = new ConcurrentHashMap<>();
+        this.userTransactions = new ConcurrentHashMap<>();
+    }
+
+    private void initializeUserIfNeeded(String uid) {
+        if (!userStates.containsKey(uid)) {
+            WalletState state = new WalletState(150000.00, 0.00, "conservative", 0.000000, 0);
+            userStates.put(uid, state);
+            
+            List<Transaction> transactions = new CopyOnWriteArrayList<>();
+            transactions.add(new Transaction(
+                1L,
+                "deposit",
+                "Depósito Inicial",
+                150000.00,
+                getFormattedDate(0),
+                false
+            ));
+            userTransactions.put(uid, transactions);
+        }
     }
 
     private String getFormattedDate(int daysOffset) {
@@ -40,19 +47,25 @@ public class WalletService {
         return date.format(dateFormatter);
     }
 
-    public WalletState getStatus() {
-        return state;
+    public WalletState getStatus(String uid) {
+        initializeUserIfNeeded(uid);
+        return userStates.get(uid);
     }
 
-    public List<Transaction> getTransactions() {
-        return transactions;
+    public List<Transaction> getTransactions(String uid) {
+        initializeUserIfNeeded(uid);
+        return userTransactions.get(uid);
     }
 
-    public synchronized WalletState deposit(double amount) {
+    public synchronized WalletState deposit(String uid, double amount) {
+        initializeUserIfNeeded(uid);
         if (amount <= 0) {
             throw new IllegalArgumentException("El monto a ingresar debe ser mayor que cero.");
         }
         
+        WalletState state = userStates.get(uid);
+        List<Transaction> transactions = userTransactions.get(uid);
+
         state.setBalance(state.getBalance() + amount);
         
         Transaction tx = new Transaction(
@@ -68,10 +81,15 @@ public class WalletService {
         return state;
     }
 
-    public synchronized WalletState withdraw(double amount) {
+    public synchronized WalletState withdraw(String uid, double amount) {
+        initializeUserIfNeeded(uid);
         if (amount <= 0) {
             throw new IllegalArgumentException("El monto a retirar debe ser mayor que cero.");
         }
+
+        WalletState state = userStates.get(uid);
+        List<Transaction> transactions = userTransactions.get(uid);
+
         if (amount > state.getBalance()) {
             throw new IllegalArgumentException("Saldo insuficiente para realizar esta extracción.");
         }
@@ -91,9 +109,11 @@ public class WalletService {
         return state;
     }
 
-    public synchronized WalletState setStrategy(String strategyName) {
+    public synchronized WalletState setStrategy(String uid, String strategyName) {
+        initializeUserIfNeeded(uid);
         try {
             Strategy.valueOf(strategyName.toUpperCase());
+            WalletState state = userStates.get(uid);
             state.setCurrentStrategy(strategyName.toLowerCase());
             return state;
         } catch (IllegalArgumentException e) {
@@ -101,14 +121,21 @@ public class WalletService {
         }
     }
 
-    public synchronized WalletState simulateDay() {
+    public synchronized void simulateDayForAllUsers() {
+        for (String uid : userStates.keySet()) {
+            simulateDayForUser(uid);
+        }
+    }
+
+    private void simulateDayForUser(String uid) {
+        WalletState state = userStates.get(uid);
+        List<Transaction> transactions = userTransactions.get(uid);
+
         Strategy strategy = Strategy.valueOf(state.getCurrentStrategy().toUpperCase());
         
         double dailyYieldRate = strategy.getDailyRate();
         
-        // Si hay volatilidad (moderado o agresivo), añadir pequeña fluctuación estocástica
         if (strategy.getVolatility() > 0.0) {
-            // Genera fluctuación gaussiana entre -volatilidad y +volatilidad
             double fluctuation = (Math.random() - 0.5) * 2.0 * strategy.getVolatility();
             dailyYieldRate += fluctuation;
         }
@@ -118,9 +145,8 @@ public class WalletService {
         state.setBalance(state.getBalance() + earningsToday);
         state.setTotalEarnings(state.getTotalEarnings() + earningsToday);
         state.setSimulatedDaysCount(state.getSimulatedDaysCount() + 1);
-        state.setTodayEarnings(0.0); // Resetear ganancias live diarias
+        state.setTodayEarnings(0.0);
 
-        // Título descriptivo según rendimiento
         String titleSuffix = "";
         if (strategy == Strategy.MODERATE) {
             titleSuffix = " (Fondo Mixto)";
@@ -139,26 +165,24 @@ public class WalletService {
         
         transactions.add(0, tx);
         
-        // Evitar desbordamiento de transacciones en memoria
         if (transactions.size() > 100) {
             transactions.remove(transactions.size() - 1);
         }
-
-        return state;
     }
 
-    public List<Map<String, Object>> getProjection(int days) {
+    public List<Map<String, Object>> getProjection(String uid, int days) {
+        initializeUserIfNeeded(uid);
         if (days <= 0) {
             throw new IllegalArgumentException("El horizonte de días debe ser mayor a cero.");
         }
         
+        WalletState state = userStates.get(uid);
         Strategy strategy = Strategy.valueOf(state.getCurrentStrategy().toUpperCase());
         double base = state.getBalance();
         
         List<Map<String, Object>> projectionPoints = new ArrayList<>();
         double tempBalance = base;
 
-        // Agregar punto inicial (Día 0)
         Map<String, Object> initialPoint = new HashMap<>();
         initialPoint.put("day", 0);
         initialPoint.put("label", "Hoy");
@@ -169,7 +193,6 @@ public class WalletService {
         for (int i = 1; i <= days; i++) {
             tempBalance = tempBalance * (1.0 + strategy.getDailyRate());
             
-            // Decidir si añadimos el punto para alivianar el peso del payload JSON
             boolean shouldAddPoint = false;
             if (days <= 30) {
                 shouldAddPoint = true;

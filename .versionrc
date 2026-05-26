@@ -1,0 +1,17 @@
+{
+  "types": [
+    {"type": "feat", "section": "✨ Nuevas Funcionalidades"},
+    {"type": "fix", "section": "🐛 Correcciones"},
+    {"type": "perf", "section": "⚡ Mejoras de Rendimiento"},
+    {"type": "refactor", "section": "♻️ Refactorización"},
+    {"type": "docs", "section": "📝 Documentación"},
+    {"type": "style", "section": "💄 Estilos"},
+    {"type": "test", "section": "✅ Tests"},
+    {"type": "build", "section": "📦 Build"},
+    {"type": "ci", "section": "👷 CI/CD"},
+    {"type": "chore", "section": "🔧 Tareas", "hidden": false},
+    {"type": "revert", "section": "⏪ Reverts"}
+  ],
+  "commitUrlFormat": "{{host}}/{{owner}}/{{repository}}/commit/{{hash}}",
+  "compareUrlFormat": "{{host}}/{{owner}}/{{repository}}/compare/{{previousTag}}...{{currentTag}}"
+}

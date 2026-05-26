@@ -1,5 +1,7 @@
 import { Chart, registerables } from 'chart.js';
 import { WalletState, Transaction, StrategyDetails, ProjectionPoint } from './types';
+import { auth } from './firebaseConfig';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
 
 Chart.register(...registerables);
 
@@ -46,6 +48,8 @@ let activeStrategyKey = 'conservative';
 let isAutoSimulating = false;
 let autoSimInterval: number | undefined = undefined;
 let growthChart: Chart | null = null;
+let currentUser: User | null = null;
+let isAdmin = false;
 
 // --- ELEMENTOS DEL DOM ---
 const getEl = <T extends HTMLElement>(id: string): T => {
@@ -90,6 +94,18 @@ let elDepositAmountInput: HTMLInputElement;
 let elWithdrawAmountInput: HTMLInputElement;
 let elWithdrawMaxHint: HTMLSpanElement;
 
+// Auth
+let elAuthOverlay: HTMLDivElement;
+let elAuthForm: HTMLFormElement;
+let elAuthEmail: HTMLInputElement;
+let elAuthPassword: HTMLInputElement;
+let elBtnAuthToggle: HTMLButtonElement;
+let elBtnAuthSubmit: HTMLButtonElement;
+let elBtnLogout: HTMLButtonElement;
+let elAuthTitle: HTMLHeadingElement;
+let elAuthDesc: HTMLParagraphElement;
+let isLoginMode = true;
+
 // --- INICIALIZACIÓN DE ELEMENTOS ---
 function initDOMElements() {
     elMainBalance = getEl<HTMLSpanElement>('main-balance');
@@ -125,12 +141,32 @@ function initDOMElements() {
     elDepositAmountInput = getEl<HTMLInputElement>('deposit-amount');
     elWithdrawAmountInput = getEl<HTMLInputElement>('withdraw-amount');
     elWithdrawMaxHint = getEl<HTMLSpanElement>('withdraw-max-hint');
+
+    elAuthOverlay = getEl<HTMLDivElement>('auth-overlay');
+    elAuthForm = getEl<HTMLFormElement>('auth-form');
+    elAuthEmail = getEl<HTMLInputElement>('auth-email');
+    elAuthPassword = getEl<HTMLInputElement>('auth-password');
+    elBtnAuthToggle = getEl<HTMLButtonElement>('btn-auth-toggle');
+    elBtnAuthSubmit = getEl<HTMLButtonElement>('btn-auth-submit');
+    elBtnLogout = getEl<HTMLButtonElement>('btn-logout');
+    elAuthTitle = getEl<HTMLHeadingElement>('auth-overlay').querySelector('.auth-title') as HTMLHeadingElement;
+    elAuthDesc = getEl<HTMLHeadingElement>('auth-overlay').querySelector('.auth-desc') as HTMLParagraphElement;
 }
 
 // --- LLAMADAS API AL BACKEND ---
 
+async function getAuthHeaders(): Promise<HeadersInit> {
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (currentUser) {
+        const token = await currentUser.getIdToken();
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+}
+
 async function apiGet<T>(endpoint: string): Promise<T> {
-    const res = await fetch(`${BACKEND_URL}${endpoint}`);
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${BACKEND_URL}${endpoint}`, { headers });
     if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
@@ -139,7 +175,7 @@ async function apiGet<T>(endpoint: string): Promise<T> {
 }
 
 async function apiPost<T>(endpoint: string, body?: object): Promise<T> {
-    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    const headers = await getAuthHeaders();
     const res = await fetch(`${BACKEND_URL}${endpoint}`, {
         method: 'POST',
         headers,
@@ -372,7 +408,9 @@ function startLiveTicker() {
 async function simulateDay() {
     try {
         const updated = await apiPost<WalletState>('/simulate-day');
-        updateState(updated);
+        // Backend now doesn't return state on simulateDay, we need to fetch status
+        const newStatus = await apiGet<WalletState>('/status');
+        updateState(newStatus);
         
         // Destello visual en el balance
         elMainBalance.classList.add('balance-flash-up');
@@ -500,17 +538,80 @@ function bindEvents() {
         if (e.target === elModalDeposit) elModalDeposit.classList.remove('active');
         if (e.target === elModalWithdraw) elModalWithdraw.classList.remove('active');
     });
+
+    // Auth Events
+    elBtnAuthToggle.addEventListener('click', () => {
+        isLoginMode = !isLoginMode;
+        if (isLoginMode) {
+            elAuthTitle.textContent = 'Bienvenido a indy';
+            elAuthDesc.textContent = 'Inicia sesión para continuar.';
+            elBtnAuthSubmit.textContent = 'Iniciar Sesión';
+            elBtnAuthToggle.textContent = '¿No tienes cuenta? Regístrate';
+        } else {
+            elAuthTitle.textContent = 'Crea tu cuenta indy';
+            elAuthDesc.textContent = 'Regístrate para empezar a invertir.';
+            elBtnAuthSubmit.textContent = 'Registrarse';
+            elBtnAuthToggle.textContent = '¿Ya tienes cuenta? Inicia Sesión';
+        }
+    });
+
+    elAuthForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = elAuthEmail.value;
+        const pass = elAuthPassword.value;
+
+        try {
+            if (isLoginMode) {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } else {
+                await createUserWithEmailAndPassword(auth, email, pass);
+            }
+        } catch (err: any) {
+            alert(`Error de autenticación: ${err.message}`);
+        }
+    });
+
+    elBtnLogout.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+        } catch (err) {
+            console.error('Error cerrando sesión', err);
+        }
+    });
 }
 
-// --- INICIO ---
+// --- AUTH STATE OBSERVER ---
+function setupAuthObserver() {
+    onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        if (user) {
+            elAuthOverlay.classList.remove('active');
+            try {
+                const tokenResult = await user.getIdTokenResult();
+                isAdmin = !!tokenResult.claims.admin;
+                
+                // Show admin elements if user is admin
+                const adminElements = document.querySelectorAll('.admin-only');
+                adminElements.forEach(el => {
+                    if (isAdmin) {
+                        el.classList.remove('hidden');
+                    } else {
+                        el.classList.add('hidden');
+                    }
+                });
 
-async function start() {
+                await loadDashboardData();
+            } catch (err) {
+                console.error('Error fetching dashboard data:', err);
+            }
+        } else {
+            elAuthOverlay.classList.add('active');
+        }
+    });
+}
+
+async function loadDashboardData() {
     try {
-        initDOMElements();
-        initChart();
-        bindEvents();
-
-        // Cargar estado inicial del backend
         const initialStatus = await apiGet<WalletState>('/status');
         updateState(initialStatus);
         updateStrategyDetails();
@@ -522,8 +623,9 @@ async function start() {
     } catch (err: unknown) {
         console.error('Error al inicializar la billetera:', err);
         const elContainer = document.querySelector('.app-container');
-        if (elContainer) {
+        if (elContainer && !elContainer.querySelector('.error-banner')) {
             const errorBanner = document.createElement('div');
+            errorBanner.className = 'error-banner';
             errorBanner.style.background = 'rgba(239, 68, 68, 0.15)';
             errorBanner.style.color = '#ef4444';
             errorBanner.style.border = '1px solid rgba(239, 68, 68, 0.3)';
@@ -538,6 +640,15 @@ async function start() {
             elContainer.insertBefore(errorBanner, elContainer.firstChild);
         }
     }
+}
+
+// --- INICIO ---
+
+function start() {
+    initDOMElements();
+    initChart();
+    bindEvents();
+    setupAuthObserver();
 }
 
 window.addEventListener('load', start);

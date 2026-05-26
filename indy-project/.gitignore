@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Firebase - NEVER commit credentials ###
+serviceAccountKey.json
+
+### Node ###
+node_modules/
