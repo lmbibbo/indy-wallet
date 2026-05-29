@@ -1,6 +1,12 @@
 package com.indy.wallet.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
+@Entity
 public class WalletState {
+    @Id
+    private String uid;
     private double balance;
     private double totalEarnings;
     private String currentStrategy;
@@ -9,12 +15,21 @@ public class WalletState {
 
     public WalletState() {}
 
-    public WalletState(double balance, double totalEarnings, String currentStrategy, double todayEarnings, int simulatedDaysCount) {
+    public WalletState(String uid, double balance, double totalEarnings, String currentStrategy, double todayEarnings, int simulatedDaysCount) {
+        this.uid = uid;
         this.balance = balance;
         this.totalEarnings = totalEarnings;
         this.currentStrategy = currentStrategy;
         this.todayEarnings = todayEarnings;
         this.simulatedDaysCount = simulatedDaysCount;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     public double getBalance() {

@@ -3,43 +3,33 @@ package com.indy.wallet.service;
 import com.indy.wallet.model.Strategy;
 import com.indy.wallet.model.Transaction;
 import com.indy.wallet.model.WalletState;
+import com.indy.wallet.repository.TransactionRepository;
+import com.indy.wallet.repository.WalletStateRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class WalletService {
     
-    private final Map<String, WalletState> userStates;
-    private final Map<String, List<Transaction>> userTransactions;
+    private final WalletStateRepository walletStateRepository;
+    private final TransactionRepository transactionRepository;
     private final DateTimeFormatter dateFormatter;
 
-    public WalletService() {
+    public WalletService(WalletStateRepository walletStateRepository, TransactionRepository transactionRepository) {
+        this.walletStateRepository = walletStateRepository;
+        this.transactionRepository = transactionRepository;
         this.dateFormatter = DateTimeFormatter.ofPattern("dd 'de' MMM, yyyy", Locale.forLanguageTag("es-AR"));
-        this.userStates = new ConcurrentHashMap<>();
-        this.userTransactions = new ConcurrentHashMap<>();
     }
 
-    private void initializeUserIfNeeded(String uid) {
-        if (!userStates.containsKey(uid)) {
-            WalletState state = new WalletState(150000.00, 0.00, "conservative", 0.000000, 0);
-            userStates.put(uid, state);
-            
-            List<Transaction> transactions = new CopyOnWriteArrayList<>();
-            transactions.add(new Transaction(
-                1L,
-                "deposit",
-                "Depósito Inicial",
-                150000.00,
-                getFormattedDate(0),
-                false
-            ));
-            userTransactions.put(uid, transactions);
-        }
+    private WalletState initializeUserIfNeeded(String uid) {
+        return walletStateRepository.findById(uid).orElseGet(() -> {
+            WalletState state = new WalletState(uid, 0.00, 0.00, "conservative", 0.000000, 0);
+            return walletStateRepository.save(state);
+        });
     }
 
     private String getFormattedDate(int daysOffset) {
@@ -48,89 +38,85 @@ public class WalletService {
     }
 
     public WalletState getStatus(String uid) {
-        initializeUserIfNeeded(uid);
-        return userStates.get(uid);
+        return initializeUserIfNeeded(uid);
     }
 
     public List<Transaction> getTransactions(String uid) {
         initializeUserIfNeeded(uid);
-        return userTransactions.get(uid);
+        return transactionRepository.findByUidOrderByIdDesc(uid);
     }
 
-    public synchronized WalletState deposit(String uid, double amount) {
-        initializeUserIfNeeded(uid);
+    @Transactional
+    public WalletState deposit(String uid, double amount) {
+        WalletState state = initializeUserIfNeeded(uid);
         if (amount <= 0) {
             throw new IllegalArgumentException("El monto a ingresar debe ser mayor que cero.");
         }
         
-        WalletState state = userStates.get(uid);
-        List<Transaction> transactions = userTransactions.get(uid);
-
         state.setBalance(state.getBalance() + amount);
+        walletStateRepository.save(state);
         
         Transaction tx = new Transaction(
-            transactions.size() + 1,
+            uid,
             "deposit",
             "Depósito de Fondos",
             amount,
             getFormattedDate(state.getSimulatedDaysCount()),
             true
         );
-        transactions.add(0, tx); // Añadir al inicio
+        transactionRepository.save(tx);
         
         return state;
     }
 
-    public synchronized WalletState withdraw(String uid, double amount) {
-        initializeUserIfNeeded(uid);
+    @Transactional
+    public WalletState withdraw(String uid, double amount) {
+        WalletState state = initializeUserIfNeeded(uid);
         if (amount <= 0) {
             throw new IllegalArgumentException("El monto a retirar debe ser mayor que cero.");
         }
-
-        WalletState state = userStates.get(uid);
-        List<Transaction> transactions = userTransactions.get(uid);
 
         if (amount > state.getBalance()) {
             throw new IllegalArgumentException("Saldo insuficiente para realizar esta extracción.");
         }
 
         state.setBalance(state.getBalance() - amount);
+        walletStateRepository.save(state);
         
         Transaction tx = new Transaction(
-            transactions.size() + 1,
+            uid,
             "withdraw",
             "Extracción de Fondos",
             amount,
             getFormattedDate(state.getSimulatedDaysCount()),
             true
         );
-        transactions.add(0, tx); // Añadir al inicio
+        transactionRepository.save(tx);
         
         return state;
     }
 
-    public synchronized WalletState setStrategy(String uid, String strategyName) {
-        initializeUserIfNeeded(uid);
+    @Transactional
+    public WalletState setStrategy(String uid, String strategyName) {
+        WalletState state = initializeUserIfNeeded(uid);
         try {
             Strategy.valueOf(strategyName.toUpperCase());
-            WalletState state = userStates.get(uid);
             state.setCurrentStrategy(strategyName.toLowerCase());
-            return state;
+            return walletStateRepository.save(state);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Estrategia de inversión inválida: " + strategyName);
         }
     }
 
-    public synchronized void simulateDayForAllUsers() {
-        for (String uid : userStates.keySet()) {
-            simulateDayForUser(uid);
+    @Transactional
+    public void simulateDayForAllUsers() {
+        List<WalletState> allUsers = walletStateRepository.findAll();
+        for (WalletState state : allUsers) {
+            simulateDayForUser(state);
         }
     }
 
-    private void simulateDayForUser(String uid) {
-        WalletState state = userStates.get(uid);
-        List<Transaction> transactions = userTransactions.get(uid);
-
+    private void simulateDayForUser(WalletState state) {
         Strategy strategy = Strategy.valueOf(state.getCurrentStrategy().toUpperCase());
         
         double dailyYieldRate = strategy.getDailyRate();
@@ -147,6 +133,8 @@ public class WalletService {
         state.setSimulatedDaysCount(state.getSimulatedDaysCount() + 1);
         state.setTodayEarnings(0.0);
 
+        walletStateRepository.save(state);
+
         String titleSuffix = "";
         if (strategy == Strategy.MODERATE) {
             titleSuffix = " (Fondo Mixto)";
@@ -155,28 +143,22 @@ public class WalletService {
         }
 
         Transaction tx = new Transaction(
-            transactions.size() + 1,
+            state.getUid(),
             "interest",
             "Acreditación Diaria Rendimiento" + titleSuffix,
             earningsToday,
             getFormattedDate(state.getSimulatedDaysCount()),
             true
         );
-        
-        transactions.add(0, tx);
-        
-        if (transactions.size() > 100) {
-            transactions.remove(transactions.size() - 1);
-        }
+        transactionRepository.save(tx);
     }
 
     public List<Map<String, Object>> getProjection(String uid, int days) {
-        initializeUserIfNeeded(uid);
+        WalletState state = initializeUserIfNeeded(uid);
         if (days <= 0) {
             throw new IllegalArgumentException("El horizonte de días debe ser mayor a cero.");
         }
         
-        WalletState state = userStates.get(uid);
         Strategy strategy = Strategy.valueOf(state.getCurrentStrategy().toUpperCase());
         double base = state.getBalance();
         
