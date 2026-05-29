@@ -1218,3 +1218,34 @@ body {
     background: rgba(239, 68, 68, 0.1);
 }
 
+.password-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    padding-right: 2.75rem !important;
+}
+
+.btn-toggle-password {
+    position: absolute;
+    right: 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1rem;
+    transition: var(--transition-quick);
+    z-index: 10;
+}
+
+.btn-toggle-password:hover {
+    color: var(--text-primary);
+}
+

@@ -407,7 +407,7 @@ function startLiveTicker() {
 
 async function simulateDay() {
     try {
-        const updated = await apiPost<WalletState>('/simulate-day');
+        await apiPost<WalletState>('/simulate-day');
         // Backend now doesn't return state on simulateDay, we need to fetch status
         const newStatus = await apiGet<WalletState>('/status');
         updateState(newStatus);
@@ -578,6 +578,22 @@ function bindEvents() {
             console.error('Error cerrando sesión', err);
         }
     });
+
+    // Toggle Password Visibility
+    const elBtnTogglePassword = document.getElementById('btn-toggle-password') as HTMLButtonElement;
+    const elTogglePasswordIcon = document.getElementById('toggle-password-icon') as HTMLElement;
+    if (elBtnTogglePassword && elTogglePasswordIcon) {
+        elBtnTogglePassword.addEventListener('click', () => {
+            const isPassword = elAuthPassword.type === 'password';
+            elAuthPassword.type = isPassword ? 'text' : 'password';
+            
+            if (isPassword) {
+                elTogglePasswordIcon.className = 'fa-solid fa-eye-slash';
+            } else {
+                elTogglePasswordIcon.className = 'fa-solid fa-eye';
+            }
+        });
+    }
 }
 
 // --- AUTH STATE OBSERVER ---

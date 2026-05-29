@@ -33,7 +33,12 @@
                     </div>
                     <div class="input-group">
                         <label for="auth-password">Contraseña</label>
-                        <input type="password" id="auth-password" required placeholder="••••••••">
+                        <div class="password-wrapper">
+                            <input type="password" id="auth-password" required placeholder="••••••••">
+                            <button type="button" id="btn-toggle-password" class="btn-toggle-password" title="Mostrar/Ocultar contraseña">
+                                <i class="fa-solid fa-eye" id="toggle-password-icon"></i>
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary" id="btn-auth-submit">Iniciar Sesión</button>
                     <button type="button" class="btn btn-outline" id="btn-auth-toggle">¿No tienes cuenta? Regístrate</button>
