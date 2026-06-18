@@ -50,6 +50,10 @@ let autoSimInterval: number | undefined = undefined;
 let growthChart: Chart | null = null;
 let currentUser: User | null = null;
 let isAdmin = false;
+let balanceRefreshInterval: number | undefined = undefined;
+
+// Intervalo de refresco del balance de MetaTrader (30 segundos)
+const BALANCE_REFRESH_MS = 30_000;
 
 // --- ELEMENTOS DEL DOM ---
 const getEl = <T extends HTMLElement>(id: string): T => {
@@ -205,6 +209,32 @@ function updateState(newState: WalletState) {
     elMainBalance.textContent = formatCurrency(localState.balance);
     elWithdrawMaxHint.textContent = `$${formatCurrency(localState.balance)}`;
     elWithdrawAmountInput.placeholder = `Máx. $${formatCurrency(localState.balance)}`;
+
+    // Actualizar indicador MT live
+    const liveIndicator = document.getElementById('mt-live-indicator');
+    if (liveIndicator) {
+        liveIndicator.title = `Última actualización: ${new Date().toLocaleTimeString('es-AR')}`;
+    }
+}
+
+// Refresca solo el balance desde MetaTrader sin reinicializar el dashboard
+async function refreshMtBalance() {
+    try {
+        const status = await apiGet<WalletState>('/status');
+        localState.balance = status.balance;
+        elMainBalance.textContent = formatCurrency(localState.balance);
+        elWithdrawMaxHint.textContent = `$${formatCurrency(localState.balance)}`;
+        elWithdrawAmountInput.placeholder = `Máx. $${formatCurrency(localState.balance)}`;
+
+        const liveIndicator = document.getElementById('mt-live-indicator');
+        if (liveIndicator) {
+            liveIndicator.title = `Última actualización: ${new Date().toLocaleTimeString('es-AR')}`;
+            liveIndicator.classList.add('pulse');
+            setTimeout(() => liveIndicator.classList.remove('pulse'), 800);
+        }
+    } catch (err) {
+        console.warn('No se pudo refrescar el balance de MetaTrader:', err);
+    }
 }
 
 // --- LOGICA DE ESTRATEGIA ---
@@ -636,6 +666,12 @@ async function loadDashboardData() {
         await loadProjections();
 
         startLiveTicker();
+
+        // Iniciar refresco automático del balance de MetaTrader cada 30 segundos
+        if (balanceRefreshInterval !== undefined) {
+            clearInterval(balanceRefreshInterval);
+        }
+        balanceRefreshInterval = window.setInterval(refreshMtBalance, BALANCE_REFRESH_MS);
     } catch (err: unknown) {
         console.error('Error al inicializar la billetera:', err);
         const elContainer = document.querySelector('.app-container');

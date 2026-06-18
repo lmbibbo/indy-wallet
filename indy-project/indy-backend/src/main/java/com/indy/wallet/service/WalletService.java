@@ -1,10 +1,13 @@
 package com.indy.wallet.service;
 
+import com.indy.wallet.model.AccountStatusReply;
 import com.indy.wallet.model.Strategy;
 import com.indy.wallet.model.Transaction;
 import com.indy.wallet.model.WalletState;
 import com.indy.wallet.repository.TransactionRepository;
 import com.indy.wallet.repository.WalletStateRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,14 +17,20 @@ import java.util.*;
 
 @Service
 public class WalletService {
-    
+
+    private static final Logger logger = LoggerFactory.getLogger(WalletService.class);
+
     private final WalletStateRepository walletStateRepository;
     private final TransactionRepository transactionRepository;
+    private final MtSocketApiClient mtSocketApiClient;
     private final DateTimeFormatter dateFormatter;
 
-    public WalletService(WalletStateRepository walletStateRepository, TransactionRepository transactionRepository) {
+    public WalletService(WalletStateRepository walletStateRepository,
+                         TransactionRepository transactionRepository,
+                         MtSocketApiClient mtSocketApiClient) {
         this.walletStateRepository = walletStateRepository;
         this.transactionRepository = transactionRepository;
+        this.mtSocketApiClient = mtSocketApiClient;
         this.dateFormatter = DateTimeFormatter.ofPattern("dd 'de' MMM, yyyy", Locale.forLanguageTag("es-AR"));
     }
 
@@ -38,7 +47,22 @@ public class WalletService {
     }
 
     public WalletState getStatus(String uid) {
-        return initializeUserIfNeeded(uid);
+        WalletState state = initializeUserIfNeeded(uid);
+
+        // Obtener el balance real de la cuenta de MetaTrader
+        try {
+            AccountStatusReply accountStatus = mtSocketApiClient.getAccountStatus();
+            if (accountStatus != null && accountStatus.getBalance() != null) {
+                state.setBalance(accountStatus.getBalance());
+                logger.info("Balance de MetaTrader obtenido: {}", accountStatus.getBalance());
+            } else {
+                logger.warn("No se pudo obtener el balance de MetaTrader. Usando balance local.");
+            }
+        } catch (Exception e) {
+            logger.error("Error al conectar con MTsocketAPI: {}. Usando balance local.", e.getMessage());
+        }
+
+        return state;
     }
 
     public List<Transaction> getTransactions(String uid) {

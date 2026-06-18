@@ -333,6 +333,48 @@ body {
     100% { text-shadow: 0 0 0 transparent; color: white; }
 }
 
+/* MT Live Indicator */
+.mt-live-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.mt-live-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #22c55e;
+    box-shadow: 0 0 6px #22c55e;
+    animation: mt-pulse 2s infinite;
+    flex-shrink: 0;
+    cursor: default;
+}
+
+.mt-live-dot.pulse {
+    animation: mt-ping 0.8s ease-out;
+}
+
+@keyframes mt-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px #22c55e; }
+    50% { opacity: 0.5; box-shadow: 0 0 2px #22c55e; }
+}
+
+@keyframes mt-ping {
+    0% { transform: scale(1); box-shadow: 0 0 6px #22c55e; }
+    50% { transform: scale(1.8); box-shadow: 0 0 14px #22c55e; opacity: 0.6; }
+    100% { transform: scale(1); box-shadow: 0 0 6px #22c55e; }
+}
+
+.mt-live-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    letter-spacing: 0.02em;
+}
+
 .live-earnings-container {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
