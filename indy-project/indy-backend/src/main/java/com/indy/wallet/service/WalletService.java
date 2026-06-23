@@ -46,23 +46,31 @@ public class WalletService {
         return date.format(dateFormatter);
     }
 
-    public WalletState getStatus(String uid) {
+    public Map<String, Object> getStatus(String uid) {
         WalletState state = initializeUserIfNeeded(uid);
+        boolean mtConnected = false;
 
-        // Obtener el balance real de la cuenta de MetaTrader
         try {
             AccountStatusReply accountStatus = mtSocketApiClient.getAccountStatus();
-            if (accountStatus != null && accountStatus.getBalance() != null) {
-                state.setBalance(accountStatus.getBalance());
-                logger.info("Balance de MetaTrader obtenido: {}", accountStatus.getBalance());
+            mtConnected = accountStatus != null && accountStatus.getBalance() != null;
+            if (mtConnected) {
+                logger.info("MetaTrader conectado. Balance MT4: {}", accountStatus.getBalance());
             } else {
-                logger.warn("No se pudo obtener el balance de MetaTrader. Usando balance local.");
+                logger.warn("MetaTrader no responde. Usando balance local de DB.");
             }
         } catch (Exception e) {
-            logger.error("Error al conectar con MTsocketAPI: {}. Usando balance local.", e.getMessage());
+            logger.warn("MetaTrader desconectado: {}. Usando balance local de DB.", e.getMessage());
         }
 
-        return state;
+        Map<String, Object> result = new HashMap<>();
+        result.put("uid", state.getUid());
+        result.put("balance", state.getBalance());
+        result.put("totalEarnings", state.getTotalEarnings());
+        result.put("currentStrategy", state.getCurrentStrategy());
+        result.put("todayEarnings", state.getTodayEarnings());
+        result.put("simulatedDaysCount", state.getSimulatedDaysCount());
+        result.put("mtConnected", mtConnected);
+        return result;
     }
 
     public List<Transaction> getTransactions(String uid) {

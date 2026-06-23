@@ -4,6 +4,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.indy.wallet.model.Transaction;
 import com.indy.wallet.model.WalletState;
+import com.indy.wallet.service.InvestmentService;
+import com.indy.wallet.service.MtSocketApiClient;
 import com.indy.wallet.service.WalletService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +23,40 @@ import java.util.Map;
 public class WalletController {
 
     private final WalletService walletService;
+    private final InvestmentService investmentService;
+    private final MtSocketApiClient mtSocketApiClient;
 
-    public WalletController(WalletService walletService) {
+    public WalletController(WalletService walletService,
+                            InvestmentService investmentService,
+                            MtSocketApiClient mtSocketApiClient) {
         this.walletService = walletService;
+        this.investmentService = investmentService;
+        this.mtSocketApiClient = mtSocketApiClient;
     }
 
     @GetMapping("/status")
-    public ResponseEntity<WalletState> getStatus(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<Map<String, Object>> getStatus(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(walletService.getStatus(jwt.getSubject()));
+    }
+
+    @GetMapping("/mt-status")
+    public ResponseEntity<Map<String, Object>> getMtStatus() {
+        boolean connected = false;
+        String lastError = null;
+        try {
+            var status = mtSocketApiClient.getAccountStatus();
+            connected = status != null && status.getBalance() != null;
+            if (!connected) {
+                lastError = "No se pudo obtener el balance";
+            }
+        } catch (Exception e) {
+            connected = false;
+            lastError = e.getMessage();
+        }
+        return ResponseEntity.ok(Map.of(
+            "connected", connected,
+            "lastError", lastError != null ? lastError : ""
+        ));
     }
 
     @GetMapping("/transactions")
@@ -82,7 +110,8 @@ public class WalletController {
     @PostMapping("/simulate-day")
     public ResponseEntity<?> simulateDayForAll() {
         walletService.simulateDayForAllUsers();
-        return ResponseEntity.ok(Map.of("message", "Simulación completada para todos los usuarios."));
+        investmentService.simulateDayForAllInvestments();
+        return ResponseEntity.ok(Map.of("message", "Simulación completada para wallets e inversiones."));
     }
 
     @GetMapping("/projection")

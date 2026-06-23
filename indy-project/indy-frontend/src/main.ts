@@ -1,11 +1,12 @@
 import { Chart, registerables } from 'chart.js';
-import { WalletState, Transaction, StrategyDetails, ProjectionPoint } from './types';
+import { WalletState, Transaction, StrategyDetails, ProjectionPoint, InvestmentSummary } from './types';
 import { auth } from './firebaseConfig';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, sendPasswordResetEmail } from 'firebase/auth';
 
 Chart.register(...registerables);
 
 const BACKEND_URL = 'http://localhost:8080/api/wallet';
+const INVESTMENTS_URL = 'http://localhost:8080/api/investments';
 
 // --- CONFIGURACIÓN DE FONDOS DE INVERSIÓN (Igual a Backend) ---
 const STRATEGIES: Record<string, StrategyDetails> = {
@@ -87,6 +88,23 @@ let elProjectedBalance: HTMLSpanElement;
 let elProjectedEarnings: HTMLSpanElement;
 let elLedgerList: HTMLDivElement;
 
+// Inversiones
+let elBtnInvestTrigger: HTMLButtonElement;
+let elModalInvest: HTMLDivElement;
+let elBtnInvestClose: HTMLButtonElement;
+let elBtnInvestConfirm: HTMLButtonElement;
+let elInvestAmountInput: HTMLInputElement;
+let elInvestStrategySelect: HTMLSelectElement;
+let elInvestMaxHint: HTMLSpanElement;
+
+let elInvTotalInvested: HTMLSpanElement;
+let elInvCurrentValue: HTMLSpanElement;
+let elInvTotalReturns: HTMLSpanElement;
+let elInvActiveCount: HTMLSpanElement;
+
+let elMtConnectionStatus: HTMLSpanElement;
+let elMtStatusText: HTMLSpanElement;
+
 // Modales
 let elModalDeposit: HTMLDivElement;
 let elModalWithdraw: HTMLDivElement;
@@ -116,6 +134,21 @@ function initDOMElements() {
     elLiveTodayEarnings = getEl<HTMLSpanElement>('live-today-earnings');
     elBtnDepositTrigger = getEl<HTMLButtonElement>('btn-deposit-trigger');
     elBtnWithdrawTrigger = getEl<HTMLButtonElement>('btn-withdraw-trigger');
+    elBtnInvestTrigger = getEl<HTMLButtonElement>('btn-invest-trigger');
+    elModalInvest = getEl<HTMLDivElement>('modal-invest');
+    elBtnInvestClose = getEl<HTMLButtonElement>('btn-invest-close');
+    elBtnInvestConfirm = getEl<HTMLButtonElement>('btn-invest-confirm');
+    elInvestAmountInput = getEl<HTMLInputElement>('invest-amount');
+    elInvestStrategySelect = getEl<HTMLSelectElement>('invest-strategy');
+    elInvestMaxHint = getEl<HTMLSpanElement>('invest-max-hint');
+
+    elInvTotalInvested = getEl<HTMLSpanElement>('inv-total-invested');
+    elInvCurrentValue = getEl<HTMLSpanElement>('inv-current-value');
+    elInvTotalReturns = getEl<HTMLSpanElement>('inv-total-returns');
+    elInvActiveCount = getEl<HTMLSpanElement>('inv-active-count');
+
+    elMtConnectionStatus = getEl<HTMLSpanElement>('mt-connection-status');
+    elMtStatusText = getEl<HTMLSpanElement>('mt-status-text');
 
     elStratConservative = getEl<HTMLButtonElement>('strat-conservative');
     elStratModerate = getEl<HTMLButtonElement>('strat-moderate');
@@ -192,6 +225,32 @@ async function apiPost<T>(endpoint: string, body?: object): Promise<T> {
     return res.json() as Promise<T>;
 }
 
+// --- LLAMADAS API AL BACKEND DE INVERSIONES ---
+
+async function apiInvestGet<T>(endpoint: string): Promise<T> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${INVESTMENTS_URL}${endpoint}`, { headers });
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+    }
+    return res.json() as Promise<T>;
+}
+
+async function apiInvestPost<T>(endpoint: string, body?: object): Promise<T> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${INVESTMENTS_URL}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: body ? JSON.stringify(body) : undefined
+    });
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+    }
+    return res.json() as Promise<T>;
+}
+
 // --- ACTUALIZACIÓN DE SALDOS E INTERFAZ ---
 
 function formatCurrency(value: number): string {
@@ -209,15 +268,38 @@ function updateState(newState: WalletState) {
     elMainBalance.textContent = formatCurrency(localState.balance);
     elWithdrawMaxHint.textContent = `$${formatCurrency(localState.balance)}`;
     elWithdrawAmountInput.placeholder = `Máx. $${formatCurrency(localState.balance)}`;
+    elInvestMaxHint.textContent = `$${formatCurrency(localState.balance)}`;
 
     // Actualizar indicador MT live
     const liveIndicator = document.getElementById('mt-live-indicator');
     if (liveIndicator) {
         liveIndicator.title = `Última actualización: ${new Date().toLocaleTimeString('es-AR')}`;
     }
+
+    // Actualizar estado de conexión MT4
+    updateMtStatus(newState.mtConnected ?? false);
 }
 
-// Refresca solo el balance desde MetaTrader sin reinicializar el dashboard
+function updateMtStatus(connected: boolean) {
+    if (connected) {
+        elMtConnectionStatus.className = 'mt-connection-badge connected';
+        elMtStatusText.textContent = 'Conectado';
+    } else {
+        elMtConnectionStatus.className = 'mt-connection-badge disconnected';
+        elMtStatusText.textContent = 'Desconectado';
+    }
+}
+
+function updateInvestmentSummary(summary: InvestmentSummary) {
+    elInvTotalInvested.textContent = `$${formatCurrency(summary.totalInvested)}`;
+    elInvCurrentValue.textContent = `$${formatCurrency(summary.currentValue)}`;
+    const returnsClass = summary.totalReturns >= 0 ? 'inv-positive' : 'inv-negative';
+    elInvTotalReturns.textContent = `${summary.totalReturns >= 0 ? '+' : '-'}$${formatCurrency(Math.abs(summary.totalReturns))}`;
+    elInvTotalReturns.className = `inv-metric-value ${returnsClass}`;
+    elInvActiveCount.textContent = String(summary.activeCount);
+}
+
+// Refresca balance, estado MT4 y resumen de inversiones
 async function refreshMtBalance() {
     try {
         const status = await apiGet<WalletState>('/status');
@@ -225,6 +307,9 @@ async function refreshMtBalance() {
         elMainBalance.textContent = formatCurrency(localState.balance);
         elWithdrawMaxHint.textContent = `$${formatCurrency(localState.balance)}`;
         elWithdrawAmountInput.placeholder = `Máx. $${formatCurrency(localState.balance)}`;
+        elInvestMaxHint.textContent = `$${formatCurrency(localState.balance)}`;
+
+        updateMtStatus(status.mtConnected ?? false);
 
         const liveIndicator = document.getElementById('mt-live-indicator');
         if (liveIndicator) {
@@ -233,7 +318,14 @@ async function refreshMtBalance() {
             setTimeout(() => liveIndicator.classList.remove('pulse'), 800);
         }
     } catch (err) {
-        console.warn('No se pudo refrescar el balance de MetaTrader:', err);
+        console.warn('No se pudo refrescar el balance:', err);
+    }
+
+    try {
+        const summary = await apiInvestGet<InvestmentSummary>('/summary');
+        updateInvestmentSummary(summary);
+    } catch (err) {
+        console.warn('No se pudo cargar resumen de inversiones:', err);
     }
 }
 
@@ -517,6 +609,38 @@ async function setStrategy(strat: string) {
     }
 }
 
+async function handleInvest() {
+    const amount = parseFloat(elInvestAmountInput.value);
+    const strategy = elInvestStrategySelect.value;
+
+    if (isNaN(amount) || amount <= 0) {
+        alert('Por favor ingresá un monto válido.');
+        return;
+    }
+
+    if (amount > localState.balance) {
+        alert('Saldo insuficiente para esta inversión.');
+        return;
+    }
+
+    try {
+        await apiInvestPost('/invest', { amount, strategy });
+        elInvestAmountInput.value = '';
+        elModalInvest.classList.remove('active');
+
+        // Recargar datos
+        const newStatus = await apiGet<WalletState>('/status');
+        updateState(newStatus);
+        const summary = await apiInvestGet<InvestmentSummary>('/summary');
+        updateInvestmentSummary(summary);
+        await loadTransactions();
+        await loadProjections();
+    } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : 'Error desconocido';
+        alert(`Error en inversión: ${errMsg}`);
+    }
+}
+
 // --- CONECTAR MANEJADORES DE EVENTOS ---
 
 function bindEvents() {
@@ -556,17 +680,24 @@ function bindEvents() {
     // Modales disparadores
     elBtnDepositTrigger.addEventListener('click', () => elModalDeposit.classList.add('active'));
     elBtnWithdrawTrigger.addEventListener('click', () => elModalWithdraw.classList.add('active'));
+    elBtnInvestTrigger.addEventListener('click', () => {
+        elInvestMaxHint.textContent = `$${formatCurrency(localState.balance)}`;
+        elModalInvest.classList.add('active');
+    });
 
     // Cerrar Modales
     elBtnDepositClose.addEventListener('click', () => elModalDeposit.classList.remove('active'));
     elBtnWithdrawClose.addEventListener('click', () => elModalWithdraw.classList.remove('active'));
+    elBtnInvestClose.addEventListener('click', () => elModalInvest.classList.remove('active'));
 
     elBtnDepositConfirm.addEventListener('click', handleDeposit);
     elBtnWithdrawConfirm.addEventListener('click', handleWithdraw);
+    elBtnInvestConfirm.addEventListener('click', handleInvest);
 
     window.addEventListener('click', (e) => {
         if (e.target === elModalDeposit) elModalDeposit.classList.remove('active');
         if (e.target === elModalWithdraw) elModalWithdraw.classList.remove('active');
+        if (e.target === elModalInvest) elModalInvest.classList.remove('active');
     });
 
     // Auth Events
@@ -689,9 +820,17 @@ async function loadDashboardData() {
         await loadTransactions();
         await loadProjections();
 
+        // Cargar resumen de inversiones
+        try {
+            const summary = await apiInvestGet<InvestmentSummary>('/summary');
+            updateInvestmentSummary(summary);
+        } catch (err) {
+            console.warn('No se pudo cargar resumen de inversiones:', err);
+        }
+
         startLiveTicker();
 
-        // Iniciar refresco automático del balance de MetaTrader cada 30 segundos
+        // Iniciar refresco automático del balance cada 30 segundos
         if (balanceRefreshInterval !== undefined) {
             clearInterval(balanceRefreshInterval);
         }

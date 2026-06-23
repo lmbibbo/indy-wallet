@@ -78,8 +78,11 @@
                     <span id="main-balance" class="balance-amount">0.00</span>
                 </div>
                 <div class="mt-live-badge">
-                    <span id="mt-live-indicator" class="mt-live-dot" title="Actualizando desde MetaTrader..."></span>
-                    <span class="mt-live-label">Saldo MT4 en vivo · actualiza cada 30s</span>
+                    <span id="mt-live-indicator" class="mt-live-dot" title="Saldo de la base de datos"></span>
+                    <span class="mt-live-label">Saldo en Billetera (DB)</span>
+                    <span id="mt-connection-status" class="mt-connection-badge disconnected">
+                        <i class="fa-solid fa-plug"></i> MT4: <span id="mt-status-text">Desconectado</span>
+                    </span>
                 </div>
                 
                 <!-- Live Ticker for today's earnings -->
@@ -99,6 +102,32 @@
                     <button class="btn btn-secondary" id="btn-withdraw-trigger">
                         <i class="fa-solid fa-circle-minus"></i> Retirar
                     </button>
+                    <button class="btn btn-invest" id="btn-invest-trigger">
+                        <i class="fa-solid fa-chart-simple"></i> Invertir en el Mercado
+                    </button>
+                </div>
+            </section>
+
+            <!-- Investment Summary Card -->
+            <section class="card glass-card investment-summary-card" id="investment-summary-section">
+                <h2 class="card-title"><i class="fa-solid fa-briefcase"></i> Mis Inversiones</h2>
+                <div class="investment-summary-grid">
+                    <div class="inv-metric">
+                        <span class="inv-metric-label">Total Invertido</span>
+                        <span class="inv-metric-value" id="inv-total-invested">$0.00</span>
+                    </div>
+                    <div class="inv-metric">
+                        <span class="inv-metric-label">Valor Actual</span>
+                        <span class="inv-metric-value" id="inv-current-value">$0.00</span>
+                    </div>
+                    <div class="inv-metric">
+                        <span class="inv-metric-label">Retornos</span>
+                        <span class="inv-metric-value" id="inv-total-returns">$0.00</span>
+                    </div>
+                    <div class="inv-metric">
+                        <span class="inv-metric-label">Inversiones Activas</span>
+                        <span class="inv-metric-value" id="inv-active-count">0</span>
+                    </div>
                 </div>
             </section>
 
@@ -250,6 +279,34 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-danger" id="btn-withdraw-confirm">Confirmar Extracción</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invest Modal -->
+    <div class="modal-overlay" id="modal-invest">
+        <div class="modal-content glass-card">
+            <button class="modal-close" id="btn-invest-close"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="modal-title"><i class="fa-solid fa-chart-simple"></i> Invertir en el Mercado</h3>
+            <p class="modal-text">Seleccioná el monto y la estrategia para tu inversión. El monto se descontará de tu saldo disponible.</p>
+            <div class="input-group">
+                <label for="invest-amount">Monto a invertir (ARS)</label>
+                <div class="money-input-wrapper">
+                    <span class="input-currency">$</span>
+                    <input type="number" id="invest-amount" placeholder="0.00" min="100" max="10000000">
+                </div>
+                <div class="max-balance-hint">Saldo disponible: <span id="invest-max-hint">$0.00</span></div>
+            </div>
+            <div class="input-group">
+                <label for="invest-strategy">Estrategia</label>
+                <select id="invest-strategy" class="invest-strategy-select">
+                    <option value="conservative">Conservador — 70% TNA (Bajo Riesgo)</option>
+                    <option value="moderate">Moderado — 95% TNA (Riesgo Medio)</option>
+                    <option value="aggressive">Agresivo — 140% TNA (Alto Riesgo)</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-invest" id="btn-invest-confirm">Confirmar Inversión</button>
             </div>
         </div>
     </div>

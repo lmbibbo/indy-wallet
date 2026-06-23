@@ -4,6 +4,19 @@ export interface WalletState {
     currentStrategy: string;
     todayEarnings: number;
     simulatedDaysCount: number;
+    mtConnected?: boolean;
+}
+
+export interface InvestmentSummary {
+    totalInvested: number;
+    currentValue: number;
+    totalReturns: number;
+    activeCount: number;
+}
+
+export interface MtStatus {
+    connected: boolean;
+    lastError: string;
 }
 
 export interface Transaction {
