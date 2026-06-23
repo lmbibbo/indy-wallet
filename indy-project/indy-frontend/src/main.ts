@@ -1,7 +1,7 @@
 import { Chart, registerables } from 'chart.js';
 import { WalletState, Transaction, StrategyDetails, ProjectionPoint } from './types';
 import { auth } from './firebaseConfig';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, sendPasswordResetEmail } from 'firebase/auth';
 
 Chart.register(...registerables);
 
@@ -570,6 +570,9 @@ function bindEvents() {
     });
 
     // Auth Events
+    const elForgotPasswordRow = document.getElementById('forgot-password-row') as HTMLDivElement;
+    const elLinkForgotPassword = document.getElementById('link-forgot-password') as HTMLAnchorElement;
+
     elBtnAuthToggle.addEventListener('click', () => {
         isLoginMode = !isLoginMode;
         if (isLoginMode) {
@@ -577,13 +580,34 @@ function bindEvents() {
             elAuthDesc.textContent = 'Inicia sesión para continuar.';
             elBtnAuthSubmit.textContent = 'Iniciar Sesión';
             elBtnAuthToggle.textContent = '¿No tienes cuenta? Regístrate';
+            if (elForgotPasswordRow) elForgotPasswordRow.classList.remove('hidden');
         } else {
             elAuthTitle.textContent = 'Crea tu cuenta indy';
             elAuthDesc.textContent = 'Regístrate para empezar a invertir.';
             elBtnAuthSubmit.textContent = 'Registrarse';
             elBtnAuthToggle.textContent = '¿Ya tienes cuenta? Inicia Sesión';
+            if (elForgotPasswordRow) elForgotPasswordRow.classList.add('hidden');
         }
     });
+
+    if (elLinkForgotPassword) {
+        elLinkForgotPassword.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const email = elAuthEmail.value.trim();
+            if (!email) {
+                alert('Por favor, ingresa tu correo electrónico en el campo superior antes de recuperar la contraseña.');
+                elAuthEmail.focus();
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert(`Se ha enviado un correo para restablecer la contraseña a: ${email}`);
+            } catch (err: any) {
+                alert(`Error al enviar correo de recuperación: ${err.message}`);
+            }
+        });
+    }
 
     elAuthForm.addEventListener('submit', async (e) => {
         e.preventDefault();

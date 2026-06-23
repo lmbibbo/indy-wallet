@@ -1291,3 +1291,23 @@ body {
     color: var(--text-primary);
 }
 
+.forgot-password-row {
+    width: 100%;
+    text-align: right;
+    margin-top: -0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.forgot-password-link {
+    font-size: 0.8rem;
+    color: var(--primary);
+    text-decoration: none;
+    transition: var(--transition-quick);
+}
+
+.forgot-password-link:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+
