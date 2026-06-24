@@ -207,7 +207,6 @@ body {
     -webkit-backdrop-filter: blur(18px);
     transition: var(--transition-smooth);
     position: relative;
-    overflow: hidden;
 }
 
 .card::before {
@@ -220,6 +219,7 @@ body {
     background: linear-gradient(130deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 60%);
     pointer-events: none;
     z-index: 1;
+    clip-path: inset(0 round 20px);
 }
 
 .card:hover {
@@ -471,9 +471,22 @@ body {
     gap: 0.4rem;
     font-size: 0.75rem;
     font-weight: 500;
-    padding: 0.2rem 0.6rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 999px;
     white-space: nowrap;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    transition: var(--transition-quick);
+}
+
+.mt-connection-badge:hover {
+    transform: scale(1.05);
+}
+
+.mt-connection-badge:active {
+    transform: scale(0.95);
 }
 
 .mt-connection-badge.connected {
@@ -1200,6 +1213,61 @@ body {
 .app-footer .copyright {
     color: var(--text-muted);
     opacity: 0.6;
+}
+
+/* ==========================================================================
+   TOOLTIPS (DEV)
+   ========================================================================== */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: rgba(10, 12, 22, 0.95);
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 50;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    border: 4px solid transparent;
+    border-top-color: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 50;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+}
+
+[data-tooltip]:hover::before {
+    transform: translateX(-50%) scale(1);
 }
 
 /* ==========================================================================

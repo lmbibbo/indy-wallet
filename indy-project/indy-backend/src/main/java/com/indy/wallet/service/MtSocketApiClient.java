@@ -1,12 +1,16 @@
 package com.indy.wallet.service;
 
 import com.indy.wallet.model.AccountStatusReply;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
 public class MtSocketApiClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(MtSocketApiClient.class);
 
     private final RestTemplate restTemplate;
 
@@ -22,8 +26,7 @@ public class MtSocketApiClient {
         try {
             return restTemplate.getForObject(url, AccountStatusReply.class);
         } catch (Exception e) {
-            // Manejar posibles errores como timeouts, host inaccesible, etc.
-            e.printStackTrace();
+            logger.warn("Error al conectar con MTsocketAPI en {}: {}", url, e.getMessage());
             return null;
         }
     }

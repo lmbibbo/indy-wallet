@@ -68,7 +68,7 @@
         <main class="dashboard-grid">
             
             <!-- Hero Balance Card -->
-            <section class="card glass-card hero-card" id="balance-section">
+            <section class="card glass-card hero-card" id="balance-section" data-tooltip="Saldo Disponible">
                 <div class="card-header">
                     <span class="card-subtitle"><i class="fa-solid fa-vault"></i> Saldo Disponible</span>
                     <span class="currency-badge">ARS / $</span>
@@ -80,36 +80,23 @@
                 <div class="mt-live-badge">
                     <span id="mt-live-indicator" class="mt-live-dot" title="Saldo de la base de datos"></span>
                     <span class="mt-live-label">Saldo en Billetera (DB)</span>
-                    <span id="mt-connection-status" class="mt-connection-badge disconnected">
-                        <i class="fa-solid fa-plug"></i> MT4: <span id="mt-status-text">Desconectado</span>
-                    </span>
-                </div>
-                
-                <!-- Live Ticker for today's earnings -->
-                <div class="live-earnings-container">
-                    <span class="earnings-label">Ganado hoy (acumulándose en vivo)</span>
-                    <div class="earnings-value-row">
-                        <span class="trend-icon"><i class="fa-solid fa-arrow-trend-up"></i></span>
-                        <span class="earnings-currency">$</span>
-                        <span id="live-today-earnings" class="earnings-amount">0.000000</span>
-                    </div>
                 </div>
 
                 <div class="action-buttons">
-                    <button class="btn btn-primary" id="btn-deposit-trigger">
+                    <button class="btn btn-primary" id="btn-deposit-trigger" data-tooltip="Ingresar Dinero">
                         <i class="fa-solid fa-circle-plus"></i> Ingresar Dinero
                     </button>
-                    <button class="btn btn-secondary" id="btn-withdraw-trigger">
+                    <button class="btn btn-secondary" id="btn-withdraw-trigger" data-tooltip="Retirar">
                         <i class="fa-solid fa-circle-minus"></i> Retirar
                     </button>
-                    <button class="btn btn-invest" id="btn-invest-trigger">
+                    <button class="btn btn-invest" id="btn-invest-trigger" data-tooltip="Invertir en el Mercado">
                         <i class="fa-solid fa-chart-simple"></i> Invertir en el Mercado
                     </button>
                 </div>
             </section>
 
             <!-- Investment Summary Card -->
-            <section class="card glass-card investment-summary-card" id="investment-summary-section">
+            <section class="card glass-card investment-summary-card" id="investment-summary-section" data-tooltip="Mis Inversiones">
                 <h2 class="card-title"><i class="fa-solid fa-briefcase"></i> Mis Inversiones</h2>
                 <div class="investment-summary-grid">
                     <div class="inv-metric">
@@ -129,23 +116,36 @@
                         <span class="inv-metric-value" id="inv-active-count">0</span>
                     </div>
                 </div>
+
+                <div class="live-earnings-container">
+                    <span class="earnings-label">Ganado hoy (acumulándose en vivo)</span>
+                    <div class="earnings-value-row">
+                        <span class="trend-icon"><i class="fa-solid fa-arrow-trend-up"></i></span>
+                        <span class="earnings-currency">$</span>
+                        <span id="live-today-earnings" class="earnings-amount">0.000000</span>
+                    </div>
+                </div>
+
+                <button id="mt-connection-status" class="mt-connection-badge disconnected" data-tooltip="Hacé clic para conectar con MT4">
+                    <i class="fa-solid fa-plug"></i> MT4: <span id="mt-status-text">Desconectado</span>
+                </button>
             </section>
 
             <!-- Investment Strategy Card -->
-            <section class="card glass-card strategy-card" id="strategy-section">
+            <section class="card glass-card strategy-card" id="strategy-section" data-tooltip="Estrategia de Inversión">
                 <h2 class="card-title"><i class="fa-solid fa-chart-line"></i> Estrategia de Inversión</h2>
                 <p class="card-description">Elige dónde colocar tus fondos para definir tu tasa de interés diario.</p>
                 
                 <div class="strategy-selector">
-                    <button class="strat-tab active" data-strategy="conservative" id="strat-conservative">
+                    <button class="strat-tab active" data-strategy="conservative" id="strat-conservative" data-tooltip="Conservador">
                         <span class="strat-title">Conservador</span>
                         <span class="strat-apy">70% TNA</span>
                     </button>
-                    <button class="strat-tab" data-strategy="moderate" id="strat-moderate">
+                    <button class="strat-tab" data-strategy="moderate" id="strat-moderate" data-tooltip="Moderado">
                         <span class="strat-title">Moderado</span>
                         <span class="strat-apy">95% TNA</span>
                     </button>
-                    <button class="strat-tab" data-strategy="aggressive" id="strat-aggressive">
+                    <button class="strat-tab" data-strategy="aggressive" id="strat-aggressive" data-tooltip="Agresivo">
                         <span class="strat-title">Agresivo</span>
                         <span class="strat-apy">140% TNA</span>
                     </button>
@@ -171,7 +171,7 @@
             </section>
 
             <!-- Time Machine / Simulator Card -->
-            <section class="card glass-card time-machine-card" id="simulator-section">
+            <section class="card glass-card time-machine-card" id="simulator-section" data-tooltip="Simulador de Tiempo y Rendimiento">
                 <h2 class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Simulador de Tiempo y Rendimiento</h2>
                 <p class="card-description">Acelera el paso del tiempo para ver el poder del interés compuesto diario.</p>
 
@@ -192,10 +192,10 @@
                 </div>
 
                 <div class="quick-simulation-actions">
-                    <button class="btn btn-outline" id="btn-add-day">
+                    <button class="btn btn-outline" id="btn-add-day" data-tooltip="Simular +1 Día">
                         <i class="fa-solid fa-calendar-plus"></i> Simular +1 Día
                     </button>
-                    <button class="btn btn-glow admin-only hidden" id="btn-auto-simulate">
+                    <button class="btn btn-glow admin-only hidden" id="btn-auto-simulate" data-tooltip="Simulación Rápida (Auto)">
                         <i class="fa-solid fa-play"></i> Simulación Rápida (Auto)
                     </button>
                 </div>
@@ -214,7 +214,7 @@
             </section>
 
             <!-- Live Chart Card -->
-            <section class="card glass-card chart-card" id="chart-section">
+            <section class="card glass-card chart-card" id="chart-section" data-tooltip="Proyección de Crecimiento">
                 <div class="chart-header-row">
                     <h2 class="card-title"><i class="fa-solid fa-chart-area"></i> Proyección de Crecimiento</h2>
                     <span class="chart-legend"><span class="legend-dot"></span> Saldo Proyectado</span>
@@ -225,7 +225,7 @@
             </section>
 
             <!-- Transactions / Ledger Card -->
-            <section class="card glass-card ledger-card" id="ledger-section">
+            <section class="card glass-card ledger-card" id="ledger-section" data-tooltip="Actividad de Cuenta (Real)">
                 <h2 class="card-title"><i class="fa-solid fa-list-ul"></i> Actividad de Cuenta (Real)</h2>
                 <div class="ledger-container">
                     <div class="ledger-list" id="ledger-list">

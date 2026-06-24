@@ -147,7 +147,7 @@ function initDOMElements() {
     elInvTotalReturns = getEl<HTMLSpanElement>('inv-total-returns');
     elInvActiveCount = getEl<HTMLSpanElement>('inv-active-count');
 
-    elMtConnectionStatus = getEl<HTMLSpanElement>('mt-connection-status');
+    elMtConnectionStatus = getEl<HTMLElement>('mt-connection-status');
     elMtStatusText = getEl<HTMLSpanElement>('mt-status-text');
 
     elStratConservative = getEl<HTMLButtonElement>('strat-conservative');
@@ -648,6 +648,21 @@ function bindEvents() {
     elStratConservative.addEventListener('click', () => setStrategy('conservative'));
     elStratModerate.addEventListener('click', () => setStrategy('moderate'));
     elStratAggressive.addEventListener('click', () => setStrategy('aggressive'));
+
+    // MT4 reconnect
+    elMtConnectionStatus.addEventListener('click', async () => {
+        elMtStatusText.textContent = 'Conectando...';
+        try {
+            const res = await apiGet<{ connected: boolean; lastError: string }>('/mt-status');
+            updateMtStatus(res.connected);
+            if (!res.connected && res.lastError) {
+                elMtStatusText.textContent = `Error: ${res.lastError}`;
+            }
+        } catch {
+            elMtStatusText.textContent = 'Error de conexión';
+            elMtConnectionStatus.className = 'mt-connection-badge disconnected';
+        }
+    });
 
     // Slider
     elSimulatorDaysRange.addEventListener('input', () => {
