@@ -1,5 +1,5 @@
 import { Chart, registerables } from 'chart.js';
-import { WalletState, Transaction, StrategyDetails, ProjectionPoint, InvestmentSummary } from './types';
+import { WalletState, Transaction, StrategyDetails, ProjectionPoint, MtAccountStatus } from './types';
 import { auth } from './firebaseConfig';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, sendPasswordResetEmail } from 'firebase/auth';
 
@@ -39,6 +39,9 @@ const STRATEGIES: Record<string, StrategyDetails> = {
 // --- ESTADO LOCAL ---
 let localState: WalletState = {
     balance: 0.00,
+    balance30dAgo: 0.00,
+    balance30dDay: 0,
+    balance30dDate: '',
     totalEarnings: 0.00,
     currentStrategy: 'conservative',
     todayEarnings: 0.000000,
@@ -97,13 +100,22 @@ let elInvestAmountInput: HTMLInputElement;
 let elInvestStrategySelect: HTMLSelectElement;
 let elInvestMaxHint: HTMLSpanElement;
 
-let elInvTotalInvested: HTMLSpanElement;
-let elInvCurrentValue: HTMLSpanElement;
-let elInvTotalReturns: HTMLSpanElement;
-let elInvActiveCount: HTMLSpanElement;
+let elInvBalance30d: HTMLSpanElement;
+let elInvBalance30dDate: HTMLSpanElement;
+let elInvBalanceActual: HTMLSpanElement;
+let elInvReturn30d: HTMLSpanElement;
+let elBtnInitBalance: HTMLButtonElement;
 
 let elMtConnectionStatus: HTMLSpanElement;
 let elMtStatusText: HTMLSpanElement;
+let elMtAccountDetails: HTMLDivElement;
+let elMtBalance: HTMLSpanElement;
+let elMtEquity: HTMLSpanElement;
+let elMtProfit: HTMLSpanElement;
+let elMtCredit: HTMLSpanElement;
+let elMtMargin: HTMLSpanElement;
+let elMtMarginFree: HTMLSpanElement;
+let elMtMarginLevel: HTMLSpanElement;
 
 // Modales
 let elModalDeposit: HTMLDivElement;
@@ -142,13 +154,22 @@ function initDOMElements() {
     elInvestStrategySelect = getEl<HTMLSelectElement>('invest-strategy');
     elInvestMaxHint = getEl<HTMLSpanElement>('invest-max-hint');
 
-    elInvTotalInvested = getEl<HTMLSpanElement>('inv-total-invested');
-    elInvCurrentValue = getEl<HTMLSpanElement>('inv-current-value');
-    elInvTotalReturns = getEl<HTMLSpanElement>('inv-total-returns');
-    elInvActiveCount = getEl<HTMLSpanElement>('inv-active-count');
+    elInvBalance30d = getEl<HTMLSpanElement>('inv-balance-30d');
+    elInvBalance30dDate = getEl<HTMLSpanElement>('inv-balance-30d-date');
+    elInvBalanceActual = getEl<HTMLSpanElement>('inv-balance-actual');
+    elInvReturn30d = getEl<HTMLSpanElement>('inv-return-30d');
+    elBtnInitBalance = getEl<HTMLButtonElement>('btn-init-balance');
 
     elMtConnectionStatus = getEl<HTMLElement>('mt-connection-status');
     elMtStatusText = getEl<HTMLSpanElement>('mt-status-text');
+    elMtAccountDetails = getEl<HTMLDivElement>('mt-account-details');
+    elMtBalance = getEl<HTMLSpanElement>('mt-balance');
+    elMtEquity = getEl<HTMLSpanElement>('mt-equity');
+    elMtProfit = getEl<HTMLSpanElement>('mt-profit');
+    elMtCredit = getEl<HTMLSpanElement>('mt-credit');
+    elMtMargin = getEl<HTMLSpanElement>('mt-margin');
+    elMtMarginFree = getEl<HTMLSpanElement>('mt-margin-free');
+    elMtMarginLevel = getEl<HTMLSpanElement>('mt-margin-level');
 
     elStratConservative = getEl<HTMLButtonElement>('strat-conservative');
     elStratModerate = getEl<HTMLButtonElement>('strat-moderate');
@@ -227,16 +248,6 @@ async function apiPost<T>(endpoint: string, body?: object): Promise<T> {
 
 // --- LLAMADAS API AL BACKEND DE INVERSIONES ---
 
-async function apiInvestGet<T>(endpoint: string): Promise<T> {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${INVESTMENTS_URL}${endpoint}`, { headers });
-    if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-    }
-    return res.json() as Promise<T>;
-}
-
 async function apiInvestPost<T>(endpoint: string, body?: object): Promise<T> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${INVESTMENTS_URL}${endpoint}`, {
@@ -290,13 +301,51 @@ function updateMtStatus(connected: boolean) {
     }
 }
 
-function updateInvestmentSummary(summary: InvestmentSummary) {
-    elInvTotalInvested.textContent = `$${formatCurrency(summary.totalInvested)}`;
-    elInvCurrentValue.textContent = `$${formatCurrency(summary.currentValue)}`;
-    const returnsClass = summary.totalReturns >= 0 ? 'inv-positive' : 'inv-negative';
-    elInvTotalReturns.textContent = `${summary.totalReturns >= 0 ? '+' : '-'}$${formatCurrency(Math.abs(summary.totalReturns))}`;
-    elInvTotalReturns.className = `inv-metric-value ${returnsClass}`;
-    elInvActiveCount.textContent = String(summary.activeCount);
+function updateInvestmentSummary(state: WalletState) {
+    elInvBalance30d.textContent = `$${formatCurrency(state.balance30dAgo)}`;
+    elInvBalance30dDate.textContent = state.balance30dDate;
+    elBtnInitBalance.classList.toggle('hidden', state.balance30dAgo > 0 || state.simulatedDaysCount > 0);
+    const currentBalance = state.mtBalance ?? state.balance;
+    elInvBalanceActual.textContent = `$${formatCurrency(currentBalance)}`;
+    const diff = currentBalance - state.balance30dAgo;
+    const returnsClass = diff >= 0 ? 'inv-positive' : 'inv-negative';
+    elInvReturn30d.textContent = `${diff >= 0 ? '+' : '-'}$${formatCurrency(Math.abs(diff))}`;
+    elInvReturn30d.className = `inv-metric-value ${returnsClass}`;
+}
+
+function updateMtAccount(account: MtAccountStatus) {
+    elMtBalance.textContent = `$${formatCurrency(account.BALANCE ?? 0)}`;
+    elMtEquity.textContent = `$${formatCurrency(account.EQUITY ?? 0)}`;
+
+    const profit = account.PROFIT ?? 0;
+    const profitClass = profit >= 0 ? 'positive' : 'negative';
+    elMtProfit.textContent = `${profit >= 0 ? '+' : ''}$${formatCurrency(Math.abs(profit))}`;
+    elMtProfit.className = `mt-field-value ${profitClass}`;
+
+    elMtCredit.textContent = `$${formatCurrency(account.CREDIT ?? 0)}`;
+    elMtMargin.textContent = `$${formatCurrency(account.MARGIN ?? 0)}`;
+    elMtMarginFree.textContent = `$${formatCurrency(account.MARGIN_FREE ?? 0)}`;
+    elMtMarginLevel.textContent = `${formatCurrency(account.MARGIN_LEVEL ?? 0)}%`;
+}
+
+async function fetchMtAccount() {
+    try {
+        const res = await fetch(`${BACKEND_URL}/mt-account`, { headers: await getAuthHeaders() });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.MSG) {
+                updateMtAccount(data as MtAccountStatus);
+                elMtAccountDetails.classList.remove('hidden');
+            } else {
+                elMtAccountDetails.classList.add('hidden');
+            }
+        } else {
+            elMtAccountDetails.classList.add('hidden');
+        }
+    } catch (err) {
+        console.warn('No se pudo cargar cuenta MT:', err);
+        elMtAccountDetails.classList.add('hidden');
+    }
 }
 
 // Refresca balance, estado MT4 y resumen de inversiones
@@ -310,6 +359,7 @@ async function refreshMtBalance() {
         elInvestMaxHint.textContent = `$${formatCurrency(localState.balance)}`;
 
         updateMtStatus(status.mtConnected ?? false);
+        updateInvestmentSummary(status);
 
         const liveIndicator = document.getElementById('mt-live-indicator');
         if (liveIndicator) {
@@ -321,12 +371,7 @@ async function refreshMtBalance() {
         console.warn('No se pudo refrescar el balance:', err);
     }
 
-    try {
-        const summary = await apiInvestGet<InvestmentSummary>('/summary');
-        updateInvestmentSummary(summary);
-    } catch (err) {
-        console.warn('No se pudo cargar resumen de inversiones:', err);
-    }
+    await fetchMtAccount();
 }
 
 // --- LOGICA DE ESTRATEGIA ---
@@ -631,8 +676,7 @@ async function handleInvest() {
         // Recargar datos
         const newStatus = await apiGet<WalletState>('/status');
         updateState(newStatus);
-        const summary = await apiInvestGet<InvestmentSummary>('/summary');
-        updateInvestmentSummary(summary);
+        updateInvestmentSummary(newStatus);
         await loadTransactions();
         await loadProjections();
     } catch (err: unknown) {
@@ -771,6 +815,16 @@ function bindEvents() {
         }
     });
 
+    elBtnInitBalance.addEventListener('click', async () => {
+        try {
+            const headers = await getAuthHeaders();
+            await fetch(`${BACKEND_URL}/init-balance`, { method: 'POST', headers });
+            await loadDashboardData();
+        } catch (err) {
+            console.error('Error al establecer saldo inicial:', err);
+        }
+    });
+
     elBtnLogout.addEventListener('click', async () => {
         try {
             await signOut(auth);
@@ -835,13 +889,9 @@ async function loadDashboardData() {
         await loadTransactions();
         await loadProjections();
 
-        // Cargar resumen de inversiones
-        try {
-            const summary = await apiInvestGet<InvestmentSummary>('/summary');
-            updateInvestmentSummary(summary);
-        } catch (err) {
-            console.warn('No se pudo cargar resumen de inversiones:', err);
-        }
+        updateInvestmentSummary(initialStatus);
+
+        await fetchMtAccount();
 
         startLiveTicker();
 

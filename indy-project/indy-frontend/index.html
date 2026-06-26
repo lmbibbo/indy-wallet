@@ -100,22 +100,27 @@
                 <h2 class="card-title"><i class="fa-solid fa-briefcase"></i> Mis Inversiones</h2>
                 <div class="investment-summary-grid">
                     <div class="inv-metric">
-                        <span class="inv-metric-label">Total Invertido</span>
-                        <span class="inv-metric-value" id="inv-total-invested">$0.00</span>
+                        <span class="inv-metric-label">Balance 30d</span>
+                        <span class="inv-metric-value" id="inv-balance-30d">$0.00</span>
+                        <span class="inv-metric-sub" id="inv-balance-30d-date"></span>
                     </div>
                     <div class="inv-metric">
-                        <span class="inv-metric-label">Valor Actual</span>
-                        <span class="inv-metric-value" id="inv-current-value">$0.00</span>
+                        <span class="inv-metric-label">Balance Actual</span>
+                        <span class="inv-metric-value" id="inv-balance-actual">$0.00</span>
                     </div>
                     <div class="inv-metric">
-                        <span class="inv-metric-label">Retornos</span>
-                        <span class="inv-metric-value" id="inv-total-returns">$0.00</span>
+                        <span class="inv-metric-label">Retorno 30d</span>
+                        <span class="inv-metric-value" id="inv-return-30d">$0.00</span>
                     </div>
                     <div class="inv-metric">
                         <span class="inv-metric-label">Inversiones Activas</span>
                         <span class="inv-metric-value" id="inv-active-count">0</span>
                     </div>
                 </div>
+
+                <button class="btn btn-outline btn-init-balance hidden" id="btn-init-balance">
+                    <i class="fa-solid fa-circle-plus"></i> Establecer saldo inicial $5,000
+                </button>
 
                 <div class="live-earnings-container">
                     <span class="earnings-label">Ganado hoy (acumulándose en vivo)</span>
@@ -129,6 +134,40 @@
                 <button id="mt-connection-status" class="mt-connection-badge disconnected" data-tooltip="Hacé clic para conectar con MT4">
                     <i class="fa-solid fa-plug"></i> MT4: <span id="mt-status-text">Desconectado</span>
                 </button>
+
+                <div class="mt-account-details" id="mt-account-details">
+                    <h3 class="mt-account-title"><i class="fa-solid fa-chart-pie"></i> Cuenta MT4</h3>
+                    <div class="mt-account-grid">
+                        <div class="mt-field">
+                            <span class="mt-field-label">Balance</span>
+                            <span class="mt-field-value" id="mt-balance">—</span>
+                        </div>
+                        <div class="mt-field">
+                            <span class="mt-field-label">Equity</span>
+                            <span class="mt-field-value" id="mt-equity">—</span>
+                        </div>
+                        <div class="mt-field">
+                            <span class="mt-field-label">Profit</span>
+                            <span class="mt-field-value" id="mt-profit">—</span>
+                        </div>
+                        <div class="mt-field">
+                            <span class="mt-field-label">Credit</span>
+                            <span class="mt-field-value" id="mt-credit">—</span>
+                        </div>
+                        <div class="mt-field">
+                            <span class="mt-field-label">Margin</span>
+                            <span class="mt-field-value" id="mt-margin">—</span>
+                        </div>
+                        <div class="mt-field">
+                            <span class="mt-field-label">Margen Libre</span>
+                            <span class="mt-field-value" id="mt-margin-free">—</span>
+                        </div>
+                        <div class="mt-field">
+                            <span class="mt-field-label">Nivel Margen</span>
+                            <span class="mt-field-value" id="mt-margin-level">—</span>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Investment Strategy Card -->

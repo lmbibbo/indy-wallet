@@ -1,5 +1,9 @@
 export interface WalletState {
     balance: number;
+    balance30dAgo: number;
+    balance30dDay: number;
+    balance30dDate: string;
+    mtBalance?: number;
     totalEarnings: number;
     currentStrategy: string;
     todayEarnings: number;
@@ -12,6 +16,30 @@ export interface InvestmentSummary {
     currentValue: number;
     totalReturns: number;
     activeCount: number;
+}
+
+export interface MtAccountStatus {
+    [key: string]: unknown;
+    MSG?: string;
+    COMPANY?: string;
+    CURRENCY?: string;
+    NAME?: string;
+    SERVER?: string;
+    LOGIN?: number;
+    LEVERAGE?: number;
+    BALANCE?: number;
+    CREDIT?: number;
+    PROFIT?: number;
+    EQUITY?: number;
+    MARGIN?: number;
+    MARGIN_FREE?: number;
+    MARGIN_LEVEL?: number;
+    MARGIN_SO_CAL?: number;
+    MARGIN_SO_SO?: number;
+    TRADE_MODE?: number;
+    TRADE_ALLOWED?: number;
+    TRADE_EXPERT?: number;
+    DEMO?: string;
 }
 
 export interface MtStatus {

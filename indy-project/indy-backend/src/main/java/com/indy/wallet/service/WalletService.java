@@ -3,8 +3,10 @@ package com.indy.wallet.service;
 import com.indy.wallet.model.AccountStatusReply;
 import com.indy.wallet.model.Strategy;
 import com.indy.wallet.model.Transaction;
+import com.indy.wallet.model.WalletBalanceSnapshot;
 import com.indy.wallet.model.WalletState;
 import com.indy.wallet.repository.TransactionRepository;
+import com.indy.wallet.repository.WalletBalanceSnapshotRepository;
 import com.indy.wallet.repository.WalletStateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,14 +24,17 @@ public class WalletService {
 
     private final WalletStateRepository walletStateRepository;
     private final TransactionRepository transactionRepository;
+    private final WalletBalanceSnapshotRepository balanceSnapshotRepository;
     private final MtSocketApiClient mtSocketApiClient;
     private final DateTimeFormatter dateFormatter;
 
     public WalletService(WalletStateRepository walletStateRepository,
                          TransactionRepository transactionRepository,
+                         WalletBalanceSnapshotRepository balanceSnapshotRepository,
                          MtSocketApiClient mtSocketApiClient) {
         this.walletStateRepository = walletStateRepository;
         this.transactionRepository = transactionRepository;
+        this.balanceSnapshotRepository = balanceSnapshotRepository;
         this.mtSocketApiClient = mtSocketApiClient;
         this.dateFormatter = DateTimeFormatter.ofPattern("dd 'de' MMM, yyyy", Locale.forLanguageTag("es-AR"));
     }
@@ -37,8 +42,42 @@ public class WalletService {
     private WalletState initializeUserIfNeeded(String uid) {
         return walletStateRepository.findById(uid).orElseGet(() -> {
             WalletState state = new WalletState(uid, 0.00, 0.00, "conservative", 0.000000, 0);
-            return walletStateRepository.save(state);
+            WalletState saved = walletStateRepository.save(state);
+            balanceSnapshotRepository.save(new WalletBalanceSnapshot(uid, 0.00, 0));
+            return saved;
         });
+    }
+
+    @Transactional
+    public void setInitialBalance(String uid, double amount) {
+        WalletState state = initializeUserIfNeeded(uid);
+        state.setBalance(amount);
+        walletStateRepository.save(state);
+        balanceSnapshotRepository.save(new WalletBalanceSnapshot(uid, amount, 0));
+    }
+
+    private void saveBalanceSnapshot(String uid, int simulatedDay) {
+        WalletState state = walletStateRepository.findById(uid).orElse(null);
+        if (state == null) return;
+        WalletBalanceSnapshot snapshot = new WalletBalanceSnapshot(uid, state.getBalance(), simulatedDay);
+        balanceSnapshotRepository.save(snapshot);
+    }
+
+    private Map<String, Object> getBalanceDaysAgo(String uid, int daysAgo) {
+        WalletState state = walletStateRepository.findById(uid).orElse(null);
+        if (state == null) return Map.of("balance", 0.0, "simulatedDay", 0);
+        int targetDay = Math.max(0, state.getSimulatedDaysCount() - daysAgo);
+        return balanceSnapshotRepository
+            .findTopByUidAndSimulatedDayLessThanEqualOrderBySimulatedDayDescCreatedAtDesc(uid, targetDay)
+            .map(s -> Map.<String, Object>of("balance", s.getBalance(), "simulatedDay", s.getSimulatedDay()))
+            .orElseGet(() -> {
+                WalletBalanceSnapshot first = balanceSnapshotRepository
+                    .findTopByUidAndSimulatedDayOrderByCreatedAtDesc(uid, 0)
+                    .orElse(null);
+                return first != null
+                    ? Map.of("balance", first.getBalance(), "simulatedDay", first.getSimulatedDay())
+                    : Map.of("balance", 0.0, "simulatedDay", 0);
+            });
     }
 
     private String getFormattedDate(int daysOffset) {
@@ -49,12 +88,14 @@ public class WalletService {
     public Map<String, Object> getStatus(String uid) {
         WalletState state = initializeUserIfNeeded(uid);
         boolean mtConnected = false;
+        Double mtBalance = null;
 
         try {
             AccountStatusReply accountStatus = mtSocketApiClient.getAccountStatus();
-            mtConnected = accountStatus != null && accountStatus.getBalance() != null;
-            if (mtConnected) {
-                logger.info("MetaTrader conectado. Balance MT4: {}", accountStatus.getBalance());
+            if (accountStatus != null && accountStatus.getBalance() != null) {
+                mtConnected = true;
+                mtBalance = accountStatus.getBalance();
+                logger.info("MetaTrader conectado. Balance MT4: {}", mtBalance);
             } else {
                 logger.warn("MetaTrader no responde. Usando balance local de DB.");
             }
@@ -62,9 +103,18 @@ public class WalletService {
             logger.warn("MetaTrader desconectado: {}. Usando balance local de DB.", e.getMessage());
         }
 
+        Map<String, Object> balance30dInfo = getBalanceDaysAgo(uid, 30);
+        double balance30dAgo = (double) balance30dInfo.get("balance");
+        int balance30dDay = (int) balance30dInfo.get("simulatedDay");
+        String balance30dDate = getFormattedDate(balance30dDay);
+
         Map<String, Object> result = new HashMap<>();
         result.put("uid", state.getUid());
         result.put("balance", state.getBalance());
+        result.put("mtBalance", mtBalance);
+        result.put("balance30dAgo", balance30dAgo);
+        result.put("balance30dDay", balance30dDay);
+        result.put("balance30dDate", balance30dDate);
         result.put("totalEarnings", state.getTotalEarnings());
         result.put("currentStrategy", state.getCurrentStrategy());
         result.put("todayEarnings", state.getTodayEarnings());
@@ -88,6 +138,8 @@ public class WalletService {
         state.setBalance(state.getBalance() + amount);
         walletStateRepository.save(state);
         
+        saveBalanceSnapshot(uid, state.getSimulatedDaysCount());
+
         Transaction tx = new Transaction(
             uid,
             "deposit",
@@ -115,6 +167,8 @@ public class WalletService {
         state.setBalance(state.getBalance() - amount);
         walletStateRepository.save(state);
         
+        saveBalanceSnapshot(uid, state.getSimulatedDaysCount());
+
         Transaction tx = new Transaction(
             uid,
             "withdraw",
@@ -166,6 +220,7 @@ public class WalletService {
         state.setTodayEarnings(0.0);
 
         walletStateRepository.save(state);
+        saveBalanceSnapshot(state.getUid(), state.getSimulatedDaysCount());
 
         String titleSuffix = "";
         if (strategy == Strategy.MODERATE) {

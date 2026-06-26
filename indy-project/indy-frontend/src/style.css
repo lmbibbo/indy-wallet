@@ -464,6 +464,94 @@ body {
     color: var(--danger);
 }
 
+.inv-metric-sub {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+}
+
+/* Init Balance Button */
+.btn-init-balance {
+    margin-top: 0.75rem;
+    width: 100%;
+    justify-content: center;
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+}
+
+.btn-init-balance i {
+    font-size: 0.75rem;
+}
+
+/* MT Account Details */
+.mt-account-details {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+}
+
+.mt-account-title {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.mt-account-title i {
+    color: var(--primary);
+    font-size: 0.8rem;
+}
+
+.mt-account-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+}
+
+.mt-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.6rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.mt-field-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.mt-field-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+.mt-field-value.positive {
+    color: var(--success);
+}
+
+.mt-field-value.negative {
+    color: var(--danger);
+}
+
+@media (max-width: 768px) {
+    .mt-account-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* MT4 Connection Badge */
 .mt-connection-badge {
     display: inline-flex;

@@ -39,6 +39,19 @@ public class WalletController {
         return ResponseEntity.ok(walletService.getStatus(jwt.getSubject()));
     }
 
+    @GetMapping("/mt-account")
+    public ResponseEntity<?> getMtAccount() {
+        try {
+            var status = mtSocketApiClient.getAccountStatus();
+            if (status != null && status.getBalance() != null) {
+                return ResponseEntity.ok(status);
+            }
+            return ResponseEntity.ok(Map.of("connected", false, "error", "No se pudo obtener la cuenta MT"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("connected", false, "error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/mt-status")
     public ResponseEntity<Map<String, Object>> getMtStatus() {
         boolean connected = false;
@@ -120,6 +133,16 @@ public class WalletController {
             List<Map<String, Object>> projection = walletService.getProjection(jwt.getSubject(), days);
             return ResponseEntity.ok(projection);
         } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/init-balance")
+    public ResponseEntity<?> initBalance(@AuthenticationPrincipal Jwt jwt) {
+        try {
+            walletService.setInitialBalance(jwt.getSubject(), 5000.00);
+            return ResponseEntity.ok(Map.of("message", "Balance inicial de $5000 establecido."));
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
