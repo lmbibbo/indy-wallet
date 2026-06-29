@@ -41,7 +41,7 @@ public class WalletService {
 
     private WalletState initializeUserIfNeeded(String uid) {
         return walletStateRepository.findById(uid).orElseGet(() -> {
-            WalletState state = new WalletState(uid, 0.00, 0.00, "conservative", 0.000000, 0);
+            WalletState state = new WalletState(uid, 0.00, 0.00, 0.00, "conservative", 0.000000, 0);
             WalletState saved = walletStateRepository.save(state);
             balanceSnapshotRepository.save(new WalletBalanceSnapshot(uid, 0.00, 0));
             return saved;
@@ -106,7 +106,7 @@ public class WalletService {
         Map<String, Object> balance30dInfo = getBalanceDaysAgo(uid, 30);
         double balance30dAgo = (double) balance30dInfo.get("balance");
         int balance30dDay = (int) balance30dInfo.get("simulatedDay");
-        String balance30dDate = getFormattedDate(balance30dDay);
+        String balance30dDate = LocalDate.now().minusDays(30).format(dateFormatter);
 
         Map<String, Object> result = new HashMap<>();
         result.put("uid", state.getUid());
@@ -115,6 +115,7 @@ public class WalletService {
         result.put("balance30dAgo", balance30dAgo);
         result.put("balance30dDay", balance30dDay);
         result.put("balance30dDate", balance30dDate);
+        result.put("investedAmount", state.getInvestedAmount());
         result.put("totalEarnings", state.getTotalEarnings());
         result.put("currentStrategy", state.getCurrentStrategy());
         result.put("todayEarnings", state.getTodayEarnings());
@@ -179,6 +180,32 @@ public class WalletService {
         );
         transactionRepository.save(tx);
         
+        return state;
+    }
+
+    @Transactional
+    public WalletState withdrawInvested(String uid, double amount) {
+        WalletState state = initializeUserIfNeeded(uid);
+        if (amount <= 0) {
+            throw new IllegalArgumentException("El monto a retirar debe ser mayor que cero.");
+        }
+        if (amount > state.getInvestedAmount()) {
+            throw new IllegalArgumentException("Monto invertido insuficiente. Invertido: $" + String.format("%.2f", state.getInvestedAmount()));
+        }
+        state.setInvestedAmount(state.getInvestedAmount() - amount);
+        state.setBalance(state.getBalance() + amount);
+        walletStateRepository.save(state);
+
+        Transaction tx = new Transaction(
+            uid,
+            "withdraw",
+            "Retiro de Inversión",
+            amount,
+            getFormattedDate(state.getSimulatedDaysCount()),
+            true
+        );
+        transactionRepository.save(tx);
+
         return state;
     }
 

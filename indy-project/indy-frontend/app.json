@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "indy",
+    "slug": "indy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "indy",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.indy.wallet"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#07090e",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.indy.wallet",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser"
+    ]
+  }
+}

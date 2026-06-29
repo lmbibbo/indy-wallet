@@ -43,6 +43,7 @@ public class InvestmentService {
         }
 
         state.setBalance(state.getBalance() - amount);
+        state.setInvestedAmount(state.getInvestedAmount() + amount);
         walletStateRepository.save(state);
 
         Investment investment = new Investment(uid, amount, strategyName.toLowerCase());

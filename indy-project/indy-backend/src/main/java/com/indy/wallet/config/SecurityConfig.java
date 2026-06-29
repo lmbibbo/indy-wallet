@@ -32,11 +32,9 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/api/wallet/request-admin").authenticated()
                 .requestMatchers("/api/wallet/**").authenticated()
                 .anyRequest().permitAll()

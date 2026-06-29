@@ -84,8 +84,8 @@ public class WalletController {
         }
         try {
             double amount = body.get("amount");
-            WalletState updatedState = walletService.deposit(jwt.getSubject(), amount);
-            return ResponseEntity.ok(updatedState);
+            walletService.deposit(jwt.getSubject(), amount);
+            return ResponseEntity.ok(walletService.getStatus(jwt.getSubject()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -98,8 +98,22 @@ public class WalletController {
         }
         try {
             double amount = body.get("amount");
-            WalletState updatedState = walletService.withdraw(jwt.getSubject(), amount);
-            return ResponseEntity.ok(updatedState);
+            walletService.withdraw(jwt.getSubject(), amount);
+            return ResponseEntity.ok(walletService.getStatus(jwt.getSubject()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/withdraw-invested")
+    public ResponseEntity<?> withdrawInvested(@AuthenticationPrincipal Jwt jwt, @RequestBody Map<String, Double> body) {
+        if (!body.containsKey("amount")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Falta el campo 'amount' en el cuerpo del mensaje."));
+        }
+        try {
+            double amount = body.get("amount");
+            walletService.withdrawInvested(jwt.getSubject(), amount);
+            return ResponseEntity.ok(walletService.getStatus(jwt.getSubject()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -112,8 +126,8 @@ public class WalletController {
         }
         try {
             String strategy = body.get("strategy");
-            WalletState updatedState = walletService.setStrategy(jwt.getSubject(), strategy);
-            return ResponseEntity.ok(updatedState);
+            walletService.setStrategy(jwt.getSubject(), strategy);
+            return ResponseEntity.ok(walletService.getStatus(jwt.getSubject()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

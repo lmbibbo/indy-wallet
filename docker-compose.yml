@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: indy-postgres
+    environment:
+      POSTGRES_DB: indywallet
+      POSTGRES_USER: indy
+      POSTGRES_PASSWORD: indy123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U indy -d indywallet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: indy-cloudbeaver
+    ports:
+      - "8978:8978"
+    environment:
+      # Configuración de la base de datos interna de CloudBeaver (donde guarda sus metadatos)
+      CB_DATABASE_DRIVER: postgresql
+      CB_DATABASE_URL: jdbc:postgresql://postgres:5432/indywallet
+      CB_DATABASE_USER: indy
+      CB_DATABASE_PASSWORD: indy123
+      # Configuración adicional recomendada
+      CB_INIT_DATABASE: "true"
+      CB_SERVER_NAME: "CloudBeaver Indy"
+      CB_SERVER_PORT: "8978"
+    volumes:
+      - cbdata:/opt/cloudbeaver/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy  # Espera a que PostgreSQL esté realmente listo
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  cbdata:

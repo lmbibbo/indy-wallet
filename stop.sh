@@ -4,12 +4,20 @@ echo "Deteniendo servicios de Indy Wallet..."
 
 kill_by_port() {
     local port=$1
-    local pid
-    pid=$(lsof -t -i :"$port" 2>/dev/null)
-    if [ -n "$pid" ]; then
-        echo "  -> Puerto $port (PID: $pid)..."
-        kill "$pid" 2>/dev/null
-        sleep 1
+    local pids
+    pids=$(lsof -t -i :"$port" 2>/dev/null)
+    if [ -n "$pids" ]; then
+        for pid in $pids; do
+            echo "  -> Puerto $port (PID: $pid)..."
+            kill "$pid" 2>/dev/null
+        done
+        sleep 2
+        # Force kill if still running
+        for pid in $pids; do
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -9 "$pid" 2>/dev/null
+            fi
+        done
     fi
 }
 
