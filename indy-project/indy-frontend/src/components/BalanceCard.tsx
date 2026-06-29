@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Tooltip from './Tooltip';
 
 interface Props {
   balance: number;
@@ -16,27 +17,39 @@ export default function BalanceCard({ balance, onDeposit, onWithdraw, onInvest }
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <Text style={styles.subtitle}>
-          <Text style={styles.subtitleIcon}>{'  '}Saldo Disponible</Text>
-        </Text>
-        <Text style={styles.currencyBadge}>ARS / $</Text>
+        <Tooltip label="Saldo disponible actual en tu billetera">
+          <Text style={styles.subtitle}>
+            <Text style={styles.subtitleIcon}>{'  '}Saldo Disponible</Text>
+          </Text>
+        </Tooltip>
+        <Tooltip label="Moneda: Peso Argentino">
+          <Text style={styles.currencyBadge}>ARS / $</Text>
+        </Tooltip>
       </View>
 
-      <View style={styles.balanceRow}>
-        <Text style={styles.balanceSign}>$</Text>
-        <Text style={styles.balanceAmount}>{formatted}</Text>
-      </View>
+      <Tooltip label="Tu saldo actual en ARS">
+        <View style={styles.balanceRow}>
+          <Text style={styles.balanceSign}>$</Text>
+          <Text style={styles.balanceAmount}>{formatted}</Text>
+        </View>
+      </Tooltip>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.btnPrimary} onPress={onDeposit}>
-          <Text style={styles.btnText}>+ Ingresar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.btnSecondary} onPress={onWithdraw}>
-          <Text style={styles.btnText}>- Retirar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.btnInvest} onPress={onInvest}>
-          <Text style={styles.btnInvestText}>Invertir</Text>
-        </TouchableOpacity>
+        <Tooltip label="Simular un depósito de fondos" style={{ flex: 1 }}>
+          <TouchableOpacity style={styles.btnPrimary} onPress={onDeposit}>
+            <Text style={styles.btnText}>+ Ingresar</Text>
+          </TouchableOpacity>
+        </Tooltip>
+        <Tooltip label="Simular una extracción de fondos" style={{ flex: 1 }}>
+          <TouchableOpacity style={styles.btnSecondary} onPress={onWithdraw}>
+            <Text style={styles.btnText}>- Retirar</Text>
+          </TouchableOpacity>
+        </Tooltip>
+        <Tooltip label="Invertir en el mercado de capitales" style={{ flex: 1 }}>
+          <TouchableOpacity style={styles.btnInvest} onPress={onInvest}>
+            <Text style={styles.btnInvestText}>Invertir</Text>
+          </TouchableOpacity>
+        </Tooltip>
       </View>
     </View>
   );

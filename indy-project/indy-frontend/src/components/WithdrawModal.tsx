@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import Tooltip from './Tooltip';
 
 interface Props {
   visible: boolean;
@@ -39,16 +40,22 @@ export default function WithdrawModal({
         style={styles.overlay}
       >
         <View style={styles.content}>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>X</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Retirar Dinero</Text>
+          <Tooltip label="Cerrar ventana">
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <Text style={styles.closeBtnText}>X</Text>
+            </TouchableOpacity>
+          </Tooltip>
+          <Tooltip label="Formulario para simular una extracción de fondos">
+            <Text style={styles.title}>Retirar Dinero</Text>
+          </Tooltip>
           <Text style={styles.desc}>
             Simula una extracción de fondos de tu saldo remunerado.
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Monto a retirar (ARS)</Text>
+            <Tooltip label="Ingresá el monto que deseas retirar">
+              <Text style={styles.label}>Monto a retirar (ARS)</Text>
+            </Tooltip>
             <View style={styles.inputWrapper}>
               <Text style={styles.currencySign}>$</Text>
               <TextInput
@@ -69,9 +76,11 @@ export default function WithdrawModal({
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-            <Text style={styles.confirmText}>Confirmar Extracción</Text>
-          </TouchableOpacity>
+          <Tooltip label="Confirmar y procesar la extracción">
+            <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
+              <Text style={styles.confirmText}>Confirmar Extracción</Text>
+            </TouchableOpacity>
+          </Tooltip>
         </View>
       </KeyboardAvoidingView>
     </Modal>

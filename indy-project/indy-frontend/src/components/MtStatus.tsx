@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MtAccountStatus } from '../types';
+import Tooltip from './Tooltip';
 
 interface Props {
   connected: boolean;
@@ -10,32 +11,32 @@ interface Props {
 export default function MtStatus({ connected, account, onReconnect }: Props) {
   return (
     <View style={styles.card}>
-      <TouchableOpacity
-        style={[styles.badge, connected ? styles.connected : styles.disconnected]}
-        onPress={onReconnect}
-      >
-        <View
-          style={[
-            styles.dot,
-            { backgroundColor: connected ? '#10b981' : '#ef4444' },
-          ]}
-        />
-        <Text style={[styles.label, { color: connected ? '#10b981' : '#ef4444' }]}>
-          MT4: {connected ? 'Conectado' : 'Desconectado'}
-        </Text>
-      </TouchableOpacity>
+      <Tooltip label="Estado de conexión con MetaTrader 4. Presiona para reconectar.">
+        <TouchableOpacity
+          style={[styles.badge, connected ? styles.connected : styles.disconnected]}
+          onPress={onReconnect}
+        >
+          <View
+            style={[
+              styles.dot,
+              { backgroundColor: connected ? '#10b981' : '#ef4444' },
+            ]}
+          />
+          <Text style={[styles.label, { color: connected ? '#10b981' : '#ef4444' }]}>
+            MT4: {connected ? 'Conectado' : 'Desconectado'}
+          </Text>
+        </TouchableOpacity>
+      </Tooltip>
 
       {account && account.MSG && (
         <View style={styles.details}>
-          <Text style={styles.detailsTitle}>Cuenta MT4</Text>
+          <Tooltip label="Estado de tu cuenta MetaTrader 4 (Caso de Uso 12)">
+            <Text style={styles.detailsTitle}>Estado MT4</Text>
+          </Tooltip>
           <View style={styles.grid}>
-            <Field label="Balance" value={account.BALANCE} />
-            <Field label="Equity" value={account.EQUITY} />
-            <Field label="Profit" value={account.PROFIT} isCurrency positive />
-            <Field label="Credit" value={account.CREDIT} />
-            <Field label="Margin" value={account.MARGIN} />
-            <Field label="Margen Libre" value={account.MARGIN_FREE} />
-            <Field label="Nivel Margen" value={account.MARGIN_LEVEL} suffix="%" />
+            <Field label="Equity" value={account.EQUITY} isCurrency tip="Capital actual (balance + profit flotante)" />
+            <Field label="Profit" value={account.PROFIT} isCurrency tip="Ganancia o pérdida actual" />
+            <Field label="Margen" value={account.MARGIN} tip="Margen utilizado en posiciones abiertas" />
           </View>
         </View>
       )}
@@ -47,14 +48,14 @@ function Field({
   label,
   value,
   isCurrency,
-  positive,
   suffix,
+  tip,
 }: {
   label: string;
   value?: number;
   isCurrency?: boolean;
-  positive?: boolean;
   suffix?: string;
+  tip?: string;
 }) {
   const color =
     isCurrency && value
@@ -67,7 +68,7 @@ function Field({
     maximumFractionDigits: 2,
   });
 
-  return (
+  const content = (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <Text style={[styles.fieldValue, { color }]}>
@@ -77,6 +78,11 @@ function Field({
       </Text>
     </View>
   );
+
+  if (tip) {
+    return <Tooltip label={tip} style={{ flex: 1 }}>{content}</Tooltip>;
+  }
+  return content;
 }
 
 const styles = StyleSheet.create({
@@ -132,11 +138,10 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 6,
   },
   field: {
-    width: '30%',
+    flex: 1,
     backgroundColor: 'rgba(255,255,255,0.02)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.03)',

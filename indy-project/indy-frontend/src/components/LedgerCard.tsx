@@ -1,5 +1,6 @@
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { Transaction } from '../types';
+import Tooltip from './Tooltip';
 
 interface Props {
   transactions: Transaction[];
@@ -63,7 +64,9 @@ export default function LedgerCard({ transactions }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Actividad de Cuenta (Real)</Text>
+      <Tooltip label="Historial de transacciones de tu cuenta">
+        <Text style={styles.cardTitle}>Actividad de Cuenta (Real)</Text>
+      </Tooltip>
       <View style={styles.listContainer}>
         {transactions.length === 0 ? (
           <Text style={styles.empty}>Sin transacciones</Text>

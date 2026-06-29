@@ -48,14 +48,6 @@ public class WalletService {
         });
     }
 
-    @Transactional
-    public void setInitialBalance(String uid, double amount) {
-        WalletState state = initializeUserIfNeeded(uid);
-        state.setBalance(amount);
-        walletStateRepository.save(state);
-        balanceSnapshotRepository.save(new WalletBalanceSnapshot(uid, amount, 0));
-    }
-
     private void saveBalanceSnapshot(String uid, int simulatedDay) {
         WalletState state = walletStateRepository.findById(uid).orElse(null);
         if (state == null) return;

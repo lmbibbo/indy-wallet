@@ -14,6 +14,7 @@ import { auth } from '../config/firebase';
 import * as api from '../api/wallet';
 import { WalletState, Transaction, ProjectionPoint, MtAccountStatus } from '../types';
 import { STRATEGIES } from '../constants/strategies';
+import Tooltip from '../components/Tooltip';
 import BalanceCard from '../components/BalanceCard';
 import InvestmentSummary from '../components/InvestmentSummary';
 import MtStatus from '../components/MtStatus';
@@ -44,12 +45,14 @@ export default function DashboardScreen() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [s, txs] = await Promise.all([
+      const [s, txs, mt] = await Promise.all([
         api.getStatus(),
         api.getTransactions(),
+        api.getMtAccount().catch(() => null),
       ]);
       setState(s);
       setTransactions(txs);
+      setMtAccount(mt);
       updateProjection(s.currentStrategy, 90);
     } catch (err: any) {
       console.warn('Error fetching data:', err.message);
@@ -195,11 +198,8 @@ export default function DashboardScreen() {
 
   const handleReconnect = async () => {
     try {
-      const status = await api.getMtStatus();
-      if (mtAccount) {
-        const updated = { ...mtAccount };
-        setMtAccount(updated);
-      }
+      const mt = await api.getMtAccount();
+      setMtAccount(mt);
     } catch {
       //
     }
@@ -217,18 +217,24 @@ export default function DashboardScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.logoRow}>
-          <View style={styles.logoIcon}>
-            <Text style={styles.logoText}>W</Text>
+        <Tooltip label="Inicio - indy Wallet">
+          <View style={styles.logoRow}>
+            <View style={styles.logoIcon}>
+              <Text style={styles.logoText}>W</Text>
+            </View>
+            <Text style={styles.appName}>indy</Text>
           </View>
-          <Text style={styles.appName}>indy</Text>
-        </View>
+        </Tooltip>
         <View style={styles.headerRight}>
-          <View style={styles.statusDot} />
+          <Tooltip label="Estado del mercado financiero">
+            <View style={styles.statusDot} />
+          </Tooltip>
           <Text style={styles.statusLabel}>Mercado Abierto</Text>
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <Text style={styles.logoutIcon}>⏻</Text>
-          </TouchableOpacity>
+          <Tooltip label="Cerrar sesión">
+            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+              <Text style={styles.logoutIcon}>⏻</Text>
+            </TouchableOpacity>
+          </Tooltip>
         </View>
       </View>
 

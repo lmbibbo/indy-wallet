@@ -1,5 +1,6 @@
 import { View, Text, Dimensions, StyleSheet } from 'react-native';
 import { Path, Line, Svg } from 'react-native-svg';
+import Tooltip from './Tooltip';
 
 interface Props {
   labels: string[];
@@ -72,11 +73,15 @@ export default function ChartCard({ labels, data }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>Proyección de Crecimiento</Text>
-        <View style={styles.legend}>
-          <View style={styles.legendDot} />
-          <Text style={styles.legendText}>Saldo Proyectado</Text>
-        </View>
+        <Tooltip label="Gráfico de proyección de crecimiento del saldo">
+          <Text style={styles.title}>Proyección de Crecimiento</Text>
+        </Tooltip>
+        <Tooltip label="Línea que muestra la evolución del saldo proyectado">
+          <View style={styles.legend}>
+            <View style={styles.legendDot} />
+            <Text style={styles.legendText}>Saldo Proyectado</Text>
+          </View>
+        </Tooltip>
       </View>
       <SimpleLineChart data={data} width={screenWidth} height={180} />
     </View>

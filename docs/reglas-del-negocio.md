@@ -107,17 +107,8 @@ indy es una billetera virtual con interés compuesto diario e integración con c
 | Campo | Detalle |
 |---|---|
 | **Actor** | Usuario autenticado |
-| **Descripción** | El usuario visualiza el estado de conexión con MetaTrader 4 y los detalles de la cuenta (balance, equity, profit, margen, etc.). |
-| **Regla** | El balance de MT4 se muestra en "Valor Actual" de inversiones. Es independiente del saldo disponible de la billetera. |
-
-### 13. Establecer Saldo Inicial
-
-| Campo | Detalle |
-|---|---|
-| **Actor** | Usuario autenticado |
-| **Descripción** | El usuario establece un saldo inicial de $5,000 en su billetera. |
-| **Precondición** | El usuario no debe haber realizado ninguna operación previa. |
-| **Postcondición** | Se crea un snapshot de balance en el día 0. |
+| **Descripción** | El usuario visualiza el estado de conexión con MetaTrader 4 y los detalles de la cuenta (Equity, Profit, Margen). |
+| **Regla** | El balance de MT4 se muestra en "Valor Actual" de inversiones. Es independiente del saldo disponible de la billetera. Se muestra además la diferencia entre Valor Actual y Monto Invertido. |
 
 ---
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Slider from './Slider';
+import Tooltip from './Tooltip';
 
 interface Props {
   isAdmin: boolean;
@@ -30,16 +31,20 @@ export default function SimulatorCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Simulador de Tiempo y Rendimiento</Text>
+      <Tooltip label="Simulador de interés compuesto diario">
+        <Text style={styles.title}>Simulador de Tiempo y Rendimiento</Text>
+      </Tooltip>
       <Text style={styles.desc}>
         Acelera el paso del tiempo para ver el poder del interés compuesto diario.
       </Text>
 
       <View style={styles.sliderSection}>
-        <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabel}>Horizonte de Simulación</Text>
-          <Text style={styles.sliderValue}>{days} días</Text>
-        </View>
+        <Tooltip label="Seleccioná el horizonte de simulación (10 a 365 días)">
+          <View style={styles.sliderLabels}>
+            <Text style={styles.sliderLabel}>Horizonte de Simulación</Text>
+            <Text style={styles.sliderValue}>{days} días</Text>
+          </View>
+        </Tooltip>
         <Slider min={10} max={365} value={days} onChange={handleChange} />
         <View style={styles.ticks}>
           {['10d', '90d', '180d', '270d', '365d'].map((t, i) => (
@@ -51,35 +56,43 @@ export default function SimulatorCard({
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.btnOutline} onPress={onSimulateDay}>
-          <Text style={styles.btnOutlineText}>+ Simular +1 Día</Text>
-        </TouchableOpacity>
-        {isAdmin && (
-          <TouchableOpacity
-            style={[styles.btnGlow, isSimulating && styles.btnGlowActive]}
-            onPress={onToggleAuto}
-          >
-            <Text style={styles.btnGlowText}>
-              {isSimulating ? 'Detener' : 'Auto'}
-            </Text>
+        <Tooltip label="Avanza un día en la simulación aplicando interés compuesto">
+          <TouchableOpacity style={styles.btnOutline} onPress={onSimulateDay}>
+            <Text style={styles.btnOutlineText}>+ Simular +1 Día</Text>
           </TouchableOpacity>
+        </Tooltip>
+        {isAdmin && (
+          <Tooltip label="Simulación automática: avanza 1 día cada 600ms">
+            <TouchableOpacity
+              style={[styles.btnGlow, isSimulating && styles.btnGlowActive]}
+              onPress={onToggleAuto}
+            >
+              <Text style={styles.btnGlowText}>
+                {isSimulating ? 'Detener' : 'Auto'}
+              </Text>
+            </TouchableOpacity>
+          </Tooltip>
         )}
       </View>
 
       <View style={styles.projection}>
-        <View style={styles.projCol}>
-          <Text style={styles.projLabel}>Saldo Proyectado</Text>
-          <Text style={styles.projVal}>
-            ${projectedBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </Text>
-        </View>
+        <Tooltip label="Saldo proyectado al final del horizonte seleccionado">
+          <View style={styles.projCol}>
+            <Text style={styles.projLabel}>Saldo Proyectado</Text>
+            <Text style={styles.projVal}>
+              ${projectedBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </View>
+        </Tooltip>
         <View style={styles.divider} />
-        <View style={styles.projCol}>
-          <Text style={styles.projLabel}>Intereses Ganados</Text>
-          <Text style={[styles.projVal, { color: '#10b981' }]}>
-            +${projectedEarnings.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </Text>
-        </View>
+        <Tooltip label="Intereses totales generados en el período proyectado">
+          <View style={styles.projCol}>
+            <Text style={styles.projLabel}>Intereses Ganados</Text>
+            <Text style={[styles.projVal, { color: '#10b981' }]}>
+              +${projectedEarnings.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </View>
+        </Tooltip>
       </View>
     </View>
   );

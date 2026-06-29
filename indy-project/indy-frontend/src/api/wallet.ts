@@ -73,10 +73,6 @@ export function setStrategy(strategy: string): Promise<WalletState> {
   return apiPost<WalletState>('/strategy', { strategy });
 }
 
-export function initBalance(): Promise<void> {
-  return apiPost<void>('/init-balance');
-}
-
 export function withdrawInvested(amount: number): Promise<WalletState> {
   return apiPost<WalletState>('/withdraw-invested', { amount });
 }

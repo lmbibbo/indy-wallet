@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { STRATEGIES, STRATEGY_KEYS } from '../constants/strategies';
+import Tooltip from './Tooltip';
 
 interface Props {
   visible: boolean;
@@ -41,16 +42,22 @@ export default function InvestModal({
         style={styles.overlay}
       >
         <View style={styles.content}>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>X</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Invertir en el Mercado</Text>
+          <Tooltip label="Cerrar ventana">
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <Text style={styles.closeBtnText}>X</Text>
+            </TouchableOpacity>
+          </Tooltip>
+          <Tooltip label="Formulario para invertir en el mercado">
+            <Text style={styles.title}>Invertir en el Mercado</Text>
+          </Tooltip>
           <Text style={styles.desc}>
             Seleccioná el monto y la estrategia para tu inversión.
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Monto a invertir (ARS)</Text>
+            <Tooltip label="Ingresá el monto que deseas invertir">
+              <Text style={styles.label}>Monto a invertir (ARS)</Text>
+            </Tooltip>
             <View style={styles.inputWrapper}>
               <Text style={styles.currencySign}>$</Text>
               <TextInput
@@ -72,45 +79,57 @@ export default function InvestModal({
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Estrategia</Text>
+            <Tooltip label="Seleccioná la estrategia de inversión">
+              <Text style={styles.label}>Estrategia</Text>
+            </Tooltip>
             <View style={styles.strategyPicker}>
               {STRATEGY_KEYS.map((key) => (
-                <TouchableOpacity
+                <Tooltip
                   key={key}
-                  style={[
-                    styles.strategyOption,
-                    strategy === key && styles.strategyOptionActive,
-                  ]}
-                  onPress={() => setStrategy(key)}
+                  label={key === 'conservative'
+                    ? 'Fondo remunerado de alta liquidez. Sin fluctuaciones.'
+                    : key === 'moderate'
+                      ? 'Fondo mixto balanceado.'
+                      : 'Fondo de alta volatilidad basado en cripto.'}
                 >
-                  <Text
+                  <TouchableOpacity
                     style={[
-                      styles.strategyText,
-                      strategy === key && styles.strategyTextActive,
+                      styles.strategyOption,
+                      strategy === key && styles.strategyOptionActive,
                     ]}
+                    onPress={() => setStrategy(key)}
                   >
-                    {key === 'conservative'
-                      ? 'Conservador'
-                      : key === 'moderate'
-                        ? 'Moderado'
-                        : 'Agresivo'}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.strategyApy,
-                      strategy === key && styles.strategyTextActive,
-                    ]}
-                  >
-                    {STRATEGIES[key].tna}% TNA
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.strategyText,
+                        strategy === key && styles.strategyTextActive,
+                      ]}
+                    >
+                      {key === 'conservative'
+                        ? 'Conservador'
+                        : key === 'moderate'
+                          ? 'Moderado'
+                          : 'Agresivo'}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.strategyApy,
+                        strategy === key && styles.strategyTextActive,
+                      ]}
+                    >
+                      {STRATEGIES[key].tna}% TNA
+                    </Text>
+                  </TouchableOpacity>
+                </Tooltip>
               ))}
             </View>
           </View>
 
-          <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-            <Text style={styles.confirmText}>Confirmar Inversión</Text>
-          </TouchableOpacity>
+          <Tooltip label="Confirmar y procesar la inversión">
+            <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
+              <Text style={styles.confirmText}>Confirmar Inversión</Text>
+            </TouchableOpacity>
+          </Tooltip>
         </View>
       </KeyboardAvoidingView>
     </Modal>

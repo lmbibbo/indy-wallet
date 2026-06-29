@@ -151,16 +151,6 @@ public class WalletController {
         }
     }
 
-    @PostMapping("/init-balance")
-    public ResponseEntity<?> initBalance(@AuthenticationPrincipal Jwt jwt) {
-        try {
-            walletService.setInitialBalance(jwt.getSubject(), 5000.00);
-            return ResponseEntity.ok(Map.of("message", "Balance inicial de $5000 establecido."));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
     // Endpoint especial para pruebas: convierte al usuario actual en ADMIN
     @PostMapping("/request-admin")
     public ResponseEntity<?> requestAdmin(@AuthenticationPrincipal Jwt jwt) {

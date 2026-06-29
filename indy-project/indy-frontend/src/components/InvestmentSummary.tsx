@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Tooltip from './Tooltip';
 
 interface Props {
   investedAmount?: number;
@@ -11,6 +12,10 @@ export default function InvestmentSummary({
   currentBalance = 0,
   onWithdrawInvest,
 }: Props) {
+  const difference = currentBalance - investedAmount;
+  const diffColor = difference >= 0 ? '#10b981' : '#ef4444';
+  const diffSign = difference >= 0 ? '+' : '';
+
   const formattedInvested = investedAmount.toLocaleString('es-AR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -19,27 +24,47 @@ export default function InvestmentSummary({
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  const formattedDiff = difference.toLocaleString('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Mis Inversiones</Text>
+      <Tooltip label="Resumen de tus inversiones activas">
+        <Text style={styles.title}>Mis Inversiones</Text>
+      </Tooltip>
       <View style={styles.grid}>
-        <View style={styles.metric}>
-          <Text style={styles.metricLabel}>Monto Invertido</Text>
-          <Text style={styles.metricValue}>${formattedInvested}</Text>
-        </View>
-        <View style={styles.metric}>
-          <Text style={styles.metricLabel}>Valor Actual</Text>
-          <Text style={styles.metricValue}>${formattedCurrent}</Text>
-        </View>
+        <Tooltip label="Capital total que has invertido" style={{ flex: 1 }}>
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>Monto Invertido</Text>
+            <Text style={styles.metricValue}>${formattedInvested}</Text>
+          </View>
+        </Tooltip>
+        <Tooltip label="Valor actual de tus inversiones (MT4)" style={{ flex: 1 }}>
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>Valor Actual</Text>
+            <Text style={styles.metricValue}>${formattedCurrent}</Text>
+          </View>
+        </Tooltip>
+        <Tooltip label="Diferencia entre valor actual y monto invertido" style={{ flex: 1 }}>
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>Diferencia</Text>
+            <Text style={[styles.metricValue, { color: diffColor }]}>
+              {diffSign}${formattedDiff}
+            </Text>
+          </View>
+        </Tooltip>
       </View>
 
       {investedAmount > 0 && onWithdrawInvest && (
-        <TouchableOpacity style={styles.withdrawBtn} onPress={onWithdrawInvest}>
-          <Text style={styles.withdrawBtnText}>
-            Retirar Inversión
-          </Text>
-        </TouchableOpacity>
+        <Tooltip label="Retirar el total de tu capital invertido">
+          <TouchableOpacity style={styles.withdrawBtn} onPress={onWithdrawInvest}>
+            <Text style={styles.withdrawBtnText}>
+              Retirar Inversión
+            </Text>
+          </TouchableOpacity>
+        </Tooltip>
       )}
     </View>
   );
@@ -62,11 +87,10 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
   },
   metric: {
-    width: '48%',
+    flex: 1,
     backgroundColor: 'rgba(255,255,255,0.02)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.04)',

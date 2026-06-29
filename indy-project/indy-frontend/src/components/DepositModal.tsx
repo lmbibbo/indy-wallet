@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import Tooltip from './Tooltip';
 
 interface Props {
   visible: boolean;
@@ -33,16 +34,22 @@ export default function DepositModal({ visible, onClose, onConfirm }: Props) {
         style={styles.overlay}
       >
         <View style={styles.content}>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>X</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Ingresar Dinero</Text>
+          <Tooltip label="Cerrar ventana">
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <Text style={styles.closeBtnText}>X</Text>
+            </TouchableOpacity>
+          </Tooltip>
+          <Tooltip label="Formulario para simular un depósito de fondos">
+            <Text style={styles.title}>Ingresar Dinero</Text>
+          </Tooltip>
           <Text style={styles.desc}>
             Simula un depósito en tu cuenta para ver cómo incrementa tu base de interés diario.
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Monto a ingresar (ARS)</Text>
+            <Tooltip label="Ingresá el monto que deseas depositar">
+              <Text style={styles.label}>Monto a ingresar (ARS)</Text>
+            </Tooltip>
             <View style={styles.inputWrapper}>
               <Text style={styles.currencySign}>$</Text>
               <TextInput
@@ -56,9 +63,11 @@ export default function DepositModal({ visible, onClose, onConfirm }: Props) {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-            <Text style={styles.confirmText}>Confirmar Depósito</Text>
-          </TouchableOpacity>
+          <Tooltip label="Confirmar y procesar el depósito">
+            <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
+              <Text style={styles.confirmText}>Confirmar Depósito</Text>
+            </TouchableOpacity>
+          </Tooltip>
         </View>
       </KeyboardAvoidingView>
     </Modal>
