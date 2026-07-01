@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MtAccountStatus } from '../types';
 import Tooltip from './Tooltip';
+import OrderHistoryModal from './OrderHistoryModal';
 
 interface Props {
   connected: boolean;
@@ -9,6 +11,8 @@ interface Props {
 }
 
 export default function MtStatus({ connected, account, onReconnect }: Props) {
+  const [showOrders, setShowOrders] = useState(false);
+
   return (
     <View style={styles.card}>
       <Tooltip label="Estado de conexión con MetaTrader 4. Presiona para reconectar.">
@@ -28,6 +32,14 @@ export default function MtStatus({ connected, account, onReconnect }: Props) {
         </TouchableOpacity>
       </Tooltip>
 
+      {connected && (
+        <Tooltip label="Ver historial de órdenes cerradas del último mes">
+          <TouchableOpacity style={styles.ordersBtn} onPress={() => setShowOrders(true)}>
+            <Text style={styles.ordersBtnText}>Ver Órdenes del Mes</Text>
+          </TouchableOpacity>
+        </Tooltip>
+      )}
+
       {account && account.MSG && (
         <View style={styles.details}>
           <Tooltip label="Estado de tu cuenta MetaTrader 4 (Caso de Uso 12)">
@@ -40,6 +52,8 @@ export default function MtStatus({ connected, account, onReconnect }: Props) {
           </View>
         </View>
       )}
+
+      <OrderHistoryModal visible={showOrders} onClose={() => setShowOrders(false)} />
     </View>
   );
 }
@@ -121,6 +135,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  ordersBtn: {
+    marginTop: 10,
+    backgroundColor: 'rgba(99,102,241,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.2)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+  },
+  ordersBtnText: {
+    color: '#818cf8',
+    fontSize: 12,
+    fontWeight: '600',
   },
   details: {
     marginTop: 12,

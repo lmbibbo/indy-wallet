@@ -12,8 +12,7 @@ import {
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import * as api from '../api/wallet';
-import { WalletState, Transaction, ProjectionPoint, MtAccountStatus } from '../types';
-import { STRATEGIES } from '../constants/strategies';
+import { WalletState, WalletEvent, ProjectionPoint, MtAccountStatus } from '../types';
 import Tooltip from '../components/Tooltip';
 import BalanceCard from '../components/BalanceCard';
 import InvestmentSummary from '../components/InvestmentSummary';
@@ -28,7 +27,7 @@ import InvestModal from '../components/InvestModal';
 
 export default function DashboardScreen() {
   const [state, setState] = useState<WalletState | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [events, setEvents] = useState<WalletEvent[]>([]);
   const [projectionLabels, setProjectionLabels] = useState<string[]>([]);
   const [projectionData, setProjectionData] = useState<number[]>([]);
   const [projectedBalance, setProjectedBalance] = useState(0);
@@ -42,29 +41,27 @@ export default function DashboardScreen() {
   const [showInvest, setShowInvest] = useState(false);
 
   const autoSimRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchAll = useCallback(async () => {
     try {
-      const [s, txs, mt] = await Promise.all([
+      const [s, evts, mt] = await Promise.all([
         api.getStatus(),
-        api.getTransactions(),
+        api.getEvents(),
         api.getMtAccount().catch(() => null),
       ]);
       setState(s);
-      setTransactions(txs);
+      setEvents(evts);
       setMtAccount(mt);
-      updateProjection(s.currentStrategy, 90);
+      updateProjection(90);
     } catch (err: any) {
       console.warn('Error fetching data:', err.message);
     }
   }, []);
 
   const updateProjection = useCallback(
-    async (strategy: string, days: number) => {
+    async (days: number) => {
       try {
-        setState((prev) =>
-          prev ? { ...prev, currentStrategy: strategy } : prev
-        );
         const points = await api.getProjection(days);
         setProjectionLabels(points.map((p) => p.label));
         setProjectionData(points.map((p) => p.balance));
@@ -83,6 +80,22 @@ export default function DashboardScreen() {
     fetchAll();
   }, [fetchAll]);
 
+  useEffect(() => {
+    pollRef.current = setInterval(() => {
+      api.getMtStatus().then((mt) => {
+        if (mt.connected) {
+          api.getStatus().then((s) => {
+            setState(s);
+            api.getFundStatus().catch(() => {});
+          });
+        }
+      }).catch(() => {});
+    }, 120000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchAll();
@@ -94,9 +107,9 @@ export default function DashboardScreen() {
       const updated = await api.deposit(amount);
       setState(updated);
       setShowDeposit(false);
-      const txs = await api.getTransactions();
-      setTransactions(txs);
-      updateProjection(updated.currentStrategy, 90);
+      const evts = await api.getEvents();
+      setEvents(evts);
+      updateProjection(90);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     }
@@ -107,43 +120,22 @@ export default function DashboardScreen() {
       const updated = await api.withdraw(amount);
       setState(updated);
       setShowWithdraw(false);
-      const txs = await api.getTransactions();
-      setTransactions(txs);
-      updateProjection(updated.currentStrategy, 90);
+      const evts = await api.getEvents();
+      setEvents(evts);
+      updateProjection(90);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     }
   };
 
-  const handleInvest = async (amount: number, strategy: string) => {
+  const handleInvest = async (amount: number) => {
     try {
-      const user = auth.currentUser;
-      const token = user ? await user.getIdToken() : '';
-      const res = await fetch('http://localhost:8080/api/investments/invest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ amount, strategy }),
-      });
-      if (!res.ok) throw new Error('Investment failed');
-      setShowInvest(false);
-      const s = await api.getStatus();
-      setState(s);
-      const txs = await api.getTransactions();
-      setTransactions(txs);
-      updateProjection(s.currentStrategy, 90);
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    }
-  };
-
-  const handleStrategyChange = async (key: string) => {
-    try {
-      const updated = await api.setStrategy(key);
+      const updated = await api.invest(amount);
       setState(updated);
-      updateProjection(key, 90);
+      setShowInvest(false);
+      const evts = await api.getEvents();
+      setEvents(evts);
+      updateProjection(90);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     }
@@ -154,9 +146,9 @@ export default function DashboardScreen() {
       await api.simulateDay();
       const s = await api.getStatus();
       setState(s);
-      const txs = await api.getTransactions();
-      setTransactions(txs);
-      updateProjection(s.currentStrategy, 90);
+      const evts = await api.getEvents();
+      setEvents(evts);
+      updateProjection(90);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     }
@@ -177,23 +169,19 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleWithdrawInvest = async () => {
-    const amount = state?.investedAmount ?? 0;
-    if (amount <= 0) return;
+  const handleWithdrawAllInvest = async () => {
     try {
-      const updated = await api.withdrawInvested(amount);
+      const updated = await api.withdrawAllInvested();
       setState(updated);
-      const txs = await api.getTransactions();
-      setTransactions(txs);
+      const evts = await api.getEvents();
+      setEvents(evts);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     }
   };
 
   const handleDaysChange = (days: number) => {
-    if (state) {
-      updateProjection(state.currentStrategy, days);
-    }
+    updateProjection(days);
   };
 
   const handleReconnect = async () => {
@@ -211,7 +199,7 @@ export default function DashboardScreen() {
 
   const balance = state?.balance ?? 0;
   const mtBalance = state?.mtBalance ?? balance;
-  const currentStrategy = state?.currentStrategy ?? 'conservative';
+  const fundStrategy = state?.fundStrategy ?? 'conservative';
 
   return (
     <View style={styles.container}>
@@ -232,7 +220,7 @@ export default function DashboardScreen() {
           <Text style={styles.statusLabel}>Mercado Abierto</Text>
           <Tooltip label="Cerrar sesión">
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-              <Text style={styles.logoutIcon}>⏻</Text>
+              <Text style={styles.logoutIcon}>{'\u23FB'}</Text>
             </TouchableOpacity>
           </Tooltip>
         </View>
@@ -258,9 +246,11 @@ export default function DashboardScreen() {
 
         {state && (
           <InvestmentSummary
-            investedAmount={state.investedAmount}
-            currentBalance={mtBalance}
-            onWithdrawInvest={state.investedAmount > 0 ? () => handleWithdrawInvest() : undefined}
+            userInvestedValue={state.userInvestedValue}
+            userInvestedAmount={state.userInvestedAmount}
+            fundTotalValue={state.fundTotalValue}
+            userPercentage={state.userPercentage}
+            onWithdrawAll={state.userInvestedValue > 0 ? () => handleWithdrawAllInvest() : undefined}
           />
         )}
 
@@ -271,8 +261,7 @@ export default function DashboardScreen() {
         />
 
         <StrategySelector
-          activeKey={currentStrategy}
-          onChange={handleStrategyChange}
+          fundStrategy={fundStrategy}
         />
 
         <SimulatorCard
@@ -287,11 +276,11 @@ export default function DashboardScreen() {
 
         <ChartCard labels={projectionLabels} data={projectionData} />
 
-        <LedgerCard transactions={transactions} />
+        <LedgerCard events={events} />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            indy Fintech S.A. — Conectado a la API del Servidor Java Backend
+            indy Fintech S.A. \u2014 Conectado a la API del Servidor Java Backend
           </Text>
           <Text style={styles.footerCopy}>
             &copy; 2026 indy. Todos los derechos reservados.

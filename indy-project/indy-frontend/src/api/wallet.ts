@@ -1,5 +1,5 @@
 import { auth } from '../config/firebase';
-import { WalletState, Transaction, ProjectionPoint, MtAccountStatus } from '../types';
+import { WalletState, WalletEvent, ProjectionPoint, MtAccountStatus, FundStatus, StrategyDetails } from '../types';
 
 const BACKEND_URL = 'http://localhost:8080/api/wallet';
 
@@ -41,8 +41,8 @@ export function getStatus(): Promise<WalletState> {
   return apiGet<WalletState>('/status');
 }
 
-export function getTransactions(): Promise<Transaction[]> {
-  return apiGet<Transaction[]>('/transactions');
+export function getEvents(): Promise<WalletEvent[]> {
+  return apiGet<WalletEvent[]>('/events');
 }
 
 export function getProjection(days: number): Promise<ProjectionPoint[]> {
@@ -53,12 +53,24 @@ export function getMtAccount(): Promise<MtAccountStatus> {
   return apiGet<MtAccountStatus>('/mt-account');
 }
 
+export function getMtOrders(fromDate: string, toDate: string): Promise<any> {
+  return apiGet<any>(`/mt-orders?from_date=${fromDate}&to_date=${toDate}`);
+}
+
 export function getMtStatus(): Promise<{ connected: boolean; lastError: string }> {
   return apiGet<{ connected: boolean; lastError: string }>('/mt-status');
 }
 
-export function simulateDay(): Promise<WalletState> {
-  return apiPost<WalletState>('/simulate-day');
+export function getFundStatus(): Promise<FundStatus> {
+  return apiGet<FundStatus>('/fund-status');
+}
+
+export function getStrategies(): Promise<StrategyDetails[]> {
+  return apiGet<StrategyDetails[]>('/strategies');
+}
+
+export function simulateDay(): Promise<{ message: string }> {
+  return apiPost<{ message: string }>('/simulate-day');
 }
 
 export function deposit(amount: number): Promise<WalletState> {
@@ -69,10 +81,18 @@ export function withdraw(amount: number): Promise<WalletState> {
   return apiPost<WalletState>('/withdraw', { amount });
 }
 
-export function setStrategy(strategy: string): Promise<WalletState> {
-  return apiPost<WalletState>('/strategy', { strategy });
+export function invest(amount: number): Promise<WalletState> {
+  return apiPost<WalletState>('/invest', { amount });
 }
 
 export function withdrawInvested(amount: number): Promise<WalletState> {
   return apiPost<WalletState>('/withdraw-invested', { amount });
+}
+
+export function withdrawAllInvested(): Promise<WalletState> {
+  return apiPost<WalletState>('/withdraw-all-invested');
+}
+
+export function setFundStrategy(strategy: string): Promise<{ message: string }> {
+  return apiPost<{ message: string }>('/strategy', { strategy });
 }

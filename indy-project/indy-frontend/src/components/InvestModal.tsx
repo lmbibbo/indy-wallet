@@ -9,14 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { STRATEGIES, STRATEGY_KEYS } from '../constants/strategies';
 import Tooltip from './Tooltip';
 
 interface Props {
   visible: boolean;
   balance: number;
   onClose: () => void;
-  onConfirm: (amount: number, strategy: string) => void;
+  onConfirm: (amount: number) => void;
 }
 
 export default function InvestModal({
@@ -26,12 +25,11 @@ export default function InvestModal({
   onConfirm,
 }: Props) {
   const [amount, setAmount] = useState('');
-  const [strategy, setStrategy] = useState('conservative');
 
   const handleConfirm = () => {
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0 || val > balance) return;
-    onConfirm(val, strategy);
+    onConfirm(val);
     setAmount('');
   };
 
@@ -47,11 +45,12 @@ export default function InvestModal({
               <Text style={styles.closeBtnText}>X</Text>
             </TouchableOpacity>
           </Tooltip>
-          <Tooltip label="Formulario para invertir en el mercado">
+          <Tooltip label="Formulario para invertir en el Fondo Común">
             <Text style={styles.title}>Invertir en el Mercado</Text>
           </Tooltip>
           <Text style={styles.desc}>
-            Seleccioná el monto y la estrategia para tu inversión.
+            Transferí fondos al Fondo Común de Inversión. La estrategia de rendimiento
+            es definida por el fondo, no por el usuario.
           </Text>
 
           <View style={styles.inputGroup}>
@@ -76,53 +75,6 @@ export default function InvestModal({
                 maximumFractionDigits: 2,
               })}
             </Text>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Tooltip label="Seleccioná la estrategia de inversión">
-              <Text style={styles.label}>Estrategia</Text>
-            </Tooltip>
-            <View style={styles.strategyPicker}>
-              {STRATEGY_KEYS.map((key) => (
-                <Tooltip
-                  key={key}
-                  label={key === 'conservative'
-                    ? 'Fondo remunerado de alta liquidez. Sin fluctuaciones.'
-                    : key === 'moderate'
-                      ? 'Fondo mixto balanceado.'
-                      : 'Fondo de alta volatilidad basado en cripto.'}
-                >
-                  <TouchableOpacity
-                    style={[
-                      styles.strategyOption,
-                      strategy === key && styles.strategyOptionActive,
-                    ]}
-                    onPress={() => setStrategy(key)}
-                  >
-                    <Text
-                      style={[
-                        styles.strategyText,
-                        strategy === key && styles.strategyTextActive,
-                      ]}
-                    >
-                      {key === 'conservative'
-                        ? 'Conservador'
-                        : key === 'moderate'
-                          ? 'Moderado'
-                          : 'Agresivo'}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.strategyApy,
-                        strategy === key && styles.strategyTextActive,
-                      ]}
-                    >
-                      {STRATEGIES[key].tna}% TNA
-                    </Text>
-                  </TouchableOpacity>
-                </Tooltip>
-              ))}
-            </View>
           </View>
 
           <Tooltip label="Confirmar y procesar la inversión">
@@ -212,36 +164,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748b',
     marginTop: 4,
-  },
-  strategyPicker: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  strategyOption: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 10,
-    padding: 10,
-    alignItems: 'center',
-  },
-  strategyOptionActive: {
-    backgroundColor: 'rgba(99,102,241,0.15)',
-    borderColor: 'rgba(99,102,241,0.3)',
-  },
-  strategyText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#94a3b8',
-  },
-  strategyTextActive: {
-    color: '#f8fafc',
-  },
-  strategyApy: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
   },
   confirmBtn: {
     backgroundColor: '#f59e0b',

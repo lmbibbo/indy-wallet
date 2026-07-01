@@ -1,15 +1,21 @@
 export interface WalletState {
     balance: number;
-    balance30dAgo: number;
-    balance30dDay: number;
-    balance30dDate: string;
     mtBalance?: number;
-    investedAmount: number;
+    fundTotalValue: number;
+    fundStrategy: string;
+    userPercentage: number;
+    userInvestedValue: number;
+    userInvestedAmount: number;
     totalEarnings: number;
-    currentStrategy: string;
     todayEarnings: number;
     simulatedDaysCount: number;
     mtConnected?: boolean;
+}
+
+export interface FundStatus {
+    exists: boolean;
+    totalValue?: number;
+    strategy?: string;
 }
 
 export interface MtAccountStatus {
@@ -36,22 +42,46 @@ export interface MtAccountStatus {
   DEMO?: string;
 }
 
-export interface Transaction {
+export interface WalletEvent {
   id: number;
-  type: 'deposit' | 'withdraw' | 'interest';
-  title: string;
+  uid?: string;
+  type: 'deposit' | 'withdraw' | 'interest' | 'pool_interest' | 'invest' | 'disinvest';
   amount: number;
-  date: string;
-  isFresh: boolean;
+  fundTotalAfter: number;
+  userBalanceAfter: number;
+  userPercentageAfter: number;
+  day: number;
+  timestamp: string;
 }
 
 export interface StrategyDetails {
+  name: string;
   tna: number;
   riskText: string;
   riskClass: string;
   description: string;
   dailyRate: number;
   volatility: number;
+}
+
+export interface Trade {
+  TICKET: number;
+  SYMBOL: string;
+  TYPE: string;
+  LOTS: number;
+  OPEN_TIME: string;
+  CLOSE_TIME: string;
+  PROFIT: number;
+  SWAP: number;
+  COMMISSION: number;
+  COMMENT: string;
+}
+
+export interface HistoryOrdersReply {
+  MSG: string;
+  TRADES: Trade[];
+  ERROR_ID: number;
+  ERROR_DESCRIPTION: string;
 }
 
 export interface ProjectionPoint {

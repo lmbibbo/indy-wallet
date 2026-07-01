@@ -1,19 +1,31 @@
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { Transaction } from '../types';
+import { WalletEvent } from '../types';
 import Tooltip from './Tooltip';
 
 interface Props {
-  transactions: Transaction[];
+  events: WalletEvent[];
 }
 
-export default function LedgerCard({ transactions }: Props) {
-  const renderItem = ({ item }: { item: Transaction }) => {
-    const isDeposit = item.type === 'deposit';
-    const isWithdraw = item.type === 'withdraw';
+function getEventLabel(event: WalletEvent): string {
+  switch (event.type) {
+    case 'deposit': return 'Depósito de Fondos';
+    case 'withdraw': return 'Extracción de Fondos';
+    case 'invest': return 'Inversión en el Fondo';
+    case 'disinvest': return 'Retiro de Inversión';
+    case 'interest': return 'Interés Generado';
+    case 'pool_interest': return 'Rendimiento del Fondo';
+    default: return event.type;
+  }
+}
+
+export default function LedgerCard({ events }: Props) {
+  const renderItem = ({ item }: { item: WalletEvent }) => {
+    const isDeposit = item.type === 'deposit' || item.type === 'interest';
+    const isWithdraw = item.type === 'withdraw' || item.type === 'disinvest';
     const prefix = isWithdraw ? '-' : '+';
 
     return (
-      <View style={[styles.item, item.isFresh && styles.fresh]}>
+      <View style={styles.item}>
         <View style={styles.left}>
           <View
             style={[
@@ -42,12 +54,14 @@ export default function LedgerCard({ transactions }: Props) {
                     : '#10b981',
               }}
             >
-              {isDeposit ? '↓' : isWithdraw ? '↑' : '↗'}
+              {isDeposit ? '\u2193' : isWithdraw ? '\u2191' : '\u2197'}
             </Text>
           </View>
           <View>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.date}>{item.date}</Text>
+            <Text style={styles.title}>{getEventLabel(item)}</Text>
+            <Text style={styles.date}>
+              Día {item.day} | {item.timestamp ? new Date(item.timestamp).toLocaleDateString('es-AR') : ''}
+            </Text>
           </View>
         </View>
         <Text
@@ -64,15 +78,15 @@ export default function LedgerCard({ transactions }: Props) {
 
   return (
     <View style={styles.card}>
-      <Tooltip label="Historial de transacciones de tu cuenta">
-        <Text style={styles.cardTitle}>Actividad de Cuenta (Real)</Text>
+      <Tooltip label="Historial de eventos de tu cuenta">
+        <Text style={styles.cardTitle}>Actividad de Cuenta</Text>
       </Tooltip>
       <View style={styles.listContainer}>
-        {transactions.length === 0 ? (
-          <Text style={styles.empty}>Sin transacciones</Text>
+        {events.length === 0 ? (
+          <Text style={styles.empty}>Sin eventos</Text>
         ) : (
           <FlatList
-            data={transactions}
+            data={events}
             keyExtractor={(item) => item.id.toString()}
             renderItem={renderItem}
             showsVerticalScrollIndicator={false}
@@ -120,10 +134,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.02)',
     borderRadius: 10,
-  },
-  fresh: {
-    borderColor: 'rgba(16,185,129,0.3)',
-    backgroundColor: 'rgba(16,185,129,0.02)',
   },
   left: {
     flexDirection: 'row',

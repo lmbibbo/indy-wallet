@@ -2,25 +2,29 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Tooltip from './Tooltip';
 
 interface Props {
-  investedAmount?: number;
-  currentBalance?: number;
-  onWithdrawInvest?: () => void;
+  userInvestedValue: number;
+  userInvestedAmount: number;
+  fundTotalValue: number;
+  userPercentage: number;
+  onWithdrawAll?: () => void;
 }
 
 export default function InvestmentSummary({
-  investedAmount = 0,
-  currentBalance = 0,
-  onWithdrawInvest,
+  userInvestedValue = 0,
+  userInvestedAmount = 0,
+  fundTotalValue = 0,
+  userPercentage = 0,
+  onWithdrawAll,
 }: Props) {
-  const difference = currentBalance - investedAmount;
+  const difference = userInvestedValue - userInvestedAmount;
   const diffColor = difference >= 0 ? '#10b981' : '#ef4444';
   const diffSign = difference >= 0 ? '+' : '';
 
-  const formattedInvested = investedAmount.toLocaleString('es-AR', {
+  const formattedInvested = userInvestedAmount.toLocaleString('es-AR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  const formattedCurrent = currentBalance.toLocaleString('es-AR', {
+  const formattedValue = userInvestedValue.toLocaleString('es-AR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -28,26 +32,30 @@ export default function InvestmentSummary({
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  const formattedFund = fundTotalValue.toLocaleString('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
   return (
     <View style={styles.card}>
-      <Tooltip label="Resumen de tus inversiones activas">
-        <Text style={styles.title}>Mis Inversiones</Text>
+      <Tooltip label="Resumen de tu participación en el Fondo Común de Inversión">
+        <Text style={styles.title}>Mi Participación en el Fondo</Text>
       </Tooltip>
       <View style={styles.grid}>
-        <Tooltip label="Capital total que has invertido" style={{ flex: 1 }}>
+        <Tooltip label="Capital que has aportado al fondo" style={{ flex: 1 }}>
           <View style={styles.metric}>
-            <Text style={styles.metricLabel}>Monto Invertido</Text>
+            <Text style={styles.metricLabel}>Aportado</Text>
             <Text style={styles.metricValue}>${formattedInvested}</Text>
           </View>
         </Tooltip>
-        <Tooltip label="Valor actual de tus inversiones (MT4)" style={{ flex: 1 }}>
+        <Tooltip label="Valor actual de tu participación en el fondo" style={{ flex: 1 }}>
           <View style={styles.metric}>
             <Text style={styles.metricLabel}>Valor Actual</Text>
-            <Text style={styles.metricValue}>${formattedCurrent}</Text>
+            <Text style={styles.metricValue}>${formattedValue}</Text>
           </View>
         </Tooltip>
-        <Tooltip label="Diferencia entre valor actual y monto invertido" style={{ flex: 1 }}>
+        <Tooltip label="Diferencia entre valor actual y lo aportado" style={{ flex: 1 }}>
           <View style={styles.metric}>
             <Text style={styles.metricLabel}>Diferencia</Text>
             <Text style={[styles.metricValue, { color: diffColor }]}>
@@ -56,12 +64,17 @@ export default function InvestmentSummary({
           </View>
         </Tooltip>
       </View>
+      <View style={styles.poolRow}>
+        <Text style={styles.poolText}>
+          Fondo Común: ${formattedFund} | Tu porción: {userPercentage.toFixed(2)}%
+        </Text>
+      </View>
 
-      {investedAmount > 0 && onWithdrawInvest && (
-        <Tooltip label="Retirar el total de tu capital invertido">
-          <TouchableOpacity style={styles.withdrawBtn} onPress={onWithdrawInvest}>
+      {userInvestedValue > 0 && onWithdrawAll && (
+        <Tooltip label="Retirar el total de tu capital invertido del fondo">
+          <TouchableOpacity style={styles.withdrawBtn} onPress={onWithdrawAll}>
             <Text style={styles.withdrawBtnText}>
-              Retirar Inversión
+              Retirar Inversión Total
             </Text>
           </TouchableOpacity>
         </Tooltip>
@@ -108,6 +121,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#f8fafc',
+  },
+  poolRow: {
+    marginTop: 8,
+    backgroundColor: 'rgba(99,102,241,0.08)',
+    borderRadius: 8,
+    padding: 8,
+    alignItems: 'center',
+  },
+  poolText: {
+    fontSize: 12,
+    color: '#94a3b8',
   },
   withdrawBtn: {
     marginTop: 12,

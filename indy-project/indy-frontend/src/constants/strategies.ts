@@ -2,6 +2,7 @@ import { StrategyDetails } from '../types';
 
 export const STRATEGIES: Record<string, StrategyDetails> = {
   conservative: {
+    name: 'conservative',
     tna: 70.0,
     riskText: 'Riesgo Bajo',
     riskClass: 'badge-low',
@@ -11,6 +12,7 @@ export const STRATEGIES: Record<string, StrategyDetails> = {
     volatility: 0.0,
   },
   moderate: {
+    name: 'moderate',
     tna: 95.0,
     riskText: 'Riesgo Medio',
     riskClass: 'badge-medium',
@@ -20,6 +22,7 @@ export const STRATEGIES: Record<string, StrategyDetails> = {
     volatility: 0.0005,
   },
   aggressive: {
+    name: 'aggressive',
     tna: 140.0,
     riskText: 'Riesgo Alto',
     riskClass: 'badge-high',

@@ -9,19 +9,15 @@ public class WalletState {
     private String uid;
     private double balance;
     private double totalEarnings;
-    private double investedAmount;
-    private String currentStrategy;
     private double todayEarnings;
     private int simulatedDaysCount;
 
     public WalletState() {}
 
-    public WalletState(String uid, double balance, double totalEarnings, double investedAmount, String currentStrategy, double todayEarnings, int simulatedDaysCount) {
+    public WalletState(String uid, double balance, double totalEarnings, double todayEarnings, int simulatedDaysCount) {
         this.uid = uid;
         this.balance = balance;
         this.totalEarnings = totalEarnings;
-        this.investedAmount = investedAmount;
-        this.currentStrategy = currentStrategy;
         this.todayEarnings = todayEarnings;
         this.simulatedDaysCount = simulatedDaysCount;
     }
@@ -48,22 +44,6 @@ public class WalletState {
 
     public void setTotalEarnings(double totalEarnings) {
         this.totalEarnings = totalEarnings;
-    }
-
-    public double getInvestedAmount() {
-        return investedAmount;
-    }
-
-    public void setInvestedAmount(double investedAmount) {
-        this.investedAmount = investedAmount;
-    }
-
-    public String getCurrentStrategy() {
-        return currentStrategy;
-    }
-
-    public void setCurrentStrategy(String currentStrategy) {
-        this.currentStrategy = currentStrategy;
     }
 
     public double getTodayEarnings() {
